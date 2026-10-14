@@ -113,7 +113,40 @@ input[type=range]{width:100%;margin:6px 0 4px;accent-color:var(--rose);height:28
   font-size:19px;border-radius:50%;background:rgba(255,255,255,.75);color:var(--plum);
   box-shadow:0 4px 14px rgba(224,96,143,.18);backdrop-filter:blur(6px)}
 .mute.off{opacity:.45}
+.play{position:relative;height:240px;background:var(--pink-0);border:2px solid var(--pink-1);
+  border-radius:18px;overflow:hidden;margin-bottom:12px;touch-action:none;user-select:none}
+.nut{position:absolute;font-size:26px;user-select:none;pointer-events:none}
+.bowl{position:absolute;bottom:4px;font-size:36px;transform:translateX(-50%);pointer-events:none;user-select:none}
+.score{font-family:Fredoka,sans-serif;font-size:21px;color:var(--rose);font-weight:600;margin-bottom:4px}
+.whiskbtn{width:150px;height:150px;border-radius:50%;font-size:17px;margin:4px auto 14px;display:block;
+  background:linear-gradient(135deg,var(--pink-4),var(--rose));color:#fff;box-shadow:0 10px 26px rgba(224,96,143,.4)}
+.whiskbtn:active{transform:scale(.92)}
+.ad{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:84%;background:#fff;
+  border:2px solid var(--pink-3);border-radius:14px;padding:15px 12px 14px;font-size:13px;font-weight:600;
+  color:var(--plum);z-index:9;text-align:center;box-shadow:0 10px 26px rgba(224,96,143,.3);line-height:1.45}
+.adx{position:absolute;right:7px;top:5px;font-size:19px;color:var(--rose);cursor:pointer;
+  width:28px;height:28px;line-height:28px;text-align:center;border-radius:50%;background:var(--pink-0)}
+.smoke{position:absolute;top:-9px;font-size:32px;pointer-events:none;opacity:.8;z-index:4}
+.cat{position:absolute;font-size:30px;cursor:pointer;user-select:none;will-change:transform;
+  animation:dance .46s ease-in-out infinite alternate}
+@keyframes dance{from{transform:translate(-50%,-50%) rotate(-14deg) scaleY(.94)}
+                 to{transform:translate(-50%,-50%) rotate(14deg) scaleY(1.06)}}
+.cat.sad{animation:none;transform:translate(-50%,-50%) scale(.85);opacity:0;
+  transition:opacity .55s ease,top .55s ease}
+.cake{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:46px;
+  pointer-events:none;user-select:none}
+.cake.hit{animation:shakec .36s}
+@keyframes shakec{25%{transform:translate(-50%,-50%) rotate(-13deg) scale(.94)}
+                  75%{transform:translate(-50%,-50%) rotate(13deg) scale(.94)}}
+.oven{position:relative;height:46px;background:var(--pink-0);border:2px solid var(--pink-1);
+  border-radius:14px;overflow:hidden;margin:10px 0 16px}
+.zone{position:absolute;top:0;bottom:0;background:rgba(224,96,143,.28);border-left:2px solid var(--rose);
+  border-right:2px solid var(--rose);transition:left .2s,width .2s}
+.needle{position:absolute;top:-2px;bottom:-2px;width:5px;background:var(--plum);border-radius:3px;
+  transform:translateX(-50%);box-shadow:0 0 8px rgba(140,58,96,.5)}
 @media (max-height:720px){
+  .play{height:196px}
+  .whiskbtn{width:124px;height:124px;font-size:15px;margin-bottom:10px}
   .card{padding:22px 20px 20px;border-radius:24px}
   h1{font-size:22px;margin-bottom:8px}
   h1.sm{font-size:19px}
@@ -183,6 +216,14 @@ input[type=range]{width:100%;margin:6px 0 4px;accent-color:var(--rose);height:28
   <button class="yes" onclick="capCheck()">Zatwierdź</button>
 </section>
 
+<section class="step" id="catch">
+  <div class="count">Krok 4 z 7</div>
+  <h1 class="sm">Złap orzechy</h1>
+  <p class="sub">Potrzeba <b>ośmiu</b>. Przesuwaj miskę palcem. Cebuli i&nbsp;czosnku <b>nie łap</b>.</p>
+  <div class="play" id="playA"><div class="bowl" id="bowl">🥣</div></div>
+  <div class="score" id="scoreA">0 / 8</div>
+</section>
+
 <section class="step" id="sms">
   <div class="count">Krok 4 z 7</div>
   <h1 class="sm">Weryfikacja dwuetapowa</h1>
@@ -216,6 +257,16 @@ input[type=range]{width:100%;margin:6px 0 4px;accent-color:var(--rose);height:28
   </div>
   <label class="chk"><input type="checkbox" id="acc"> Przeczytałam i akceptuję</label>
   <button class="yes" onclick="accGo()">Akceptuję regulamin</button>
+</section>
+
+<section class="step" id="whisk">
+  <div class="count">Krok 7 z 12</div>
+  <h1 class="sm">Ubij masę</h1>
+  <p class="sub">Klikaj szybko. Masa <b>opada</b>, jak przestaniesz — a przycisk bywa niespokojny.</p>
+  <button class="whiskbtn" id="whiskBtn">UBIJAJ</button>
+  <div class="bar"><i id="whiskBar"></i></div>
+  <div class="score" id="whiskPct">0%</div>
+  <p class="sub" id="whiskLab" style="margin:4px 0 0">Masa jest za rzadka</p>
 </section>
 
 <section class="step" id="news">
@@ -259,6 +310,24 @@ input[type=range]{width:100%;margin:6px 0 4px;accent-color:var(--rose);height:28
   <p class="sub" id="proglab" style="margin:10px 0 0">Łączenie z piekarnikiem…</p>
 </section>
 
+<section class="step" id="oven">
+  <div class="count">Krok 11 z 19</div>
+  <h1 class="sm">Wyjmij w idealnym momencie</h1>
+  <p class="sub">Trafi w <b>wąskie różowe pole</b>. Wskaźnik jest szybki, zmienia tempo, a&nbsp;z piekarnika leci dym. Każde pudło nieco poszerza pole.</p>
+  <div class="oven"><div class="zone" id="ovZone"></div><div class="needle" id="ovNeedle"></div></div>
+  <div class="score" style="font-size:14px;margin-bottom:10px">przypalenia: <span id="ovBurn">0</span></div>
+  <button class="yes" onclick="ovenTap()">Wyjmij z piekarnika</button>
+</section>
+
+<section class="step" id="cats">
+  <div class="count">Krok 12 z 19</div>
+  <h1 class="sm">Broń orzechowca</h1>
+  <p class="sub">Tańczące koty idą po ciasto. <b>Przegoń sześć</b>. W&nbsp;myszy <b>nie klikaj</b> — one nie chcą ciasta.</p>
+  <div class="play" id="playC"><div class="cake" id="cake">🍰</div></div>
+  <div class="score"><span id="catScore">0 / 6</span>
+    <span style="font-size:13px;color:#b78aa0;font-weight:600"> · podjedzone: <span id="catSteal">0</span></span></div>
+</section>
+
 <section class="step" id="rate">
   <div class="count">Krok 11 z 12</div>
   <h1 class="sm">Oceń naszą obsługę</h1>
@@ -291,7 +360,7 @@ input[type=range]{width:100%;margin:6px 0 4px;accent-color:var(--rose);height:28
   <div class="count">Koniec formularza</div>
   <h1>No dobra. Będzie orzechowiec.</h1>
   <div class="stamp">ZATWIERDZONY</div>
-  <p class="sub">Przeszłaś przez czternaście ekranów dla jednego ciasta. Szanuję to bardziej, niż jesteś w stanie sobie wyobrazić.</p>
+  <p class="sub">Przeszłaś przez osiemnaście ekranów i cztery minigierki dla jednego ciasta. Szanuję to bardziej, niż jesteś w stanie sobie wyobrazić.</p>
   <div class="meta">
     Termin · <span>sobota, jak wybrałaś</span><br>
     Wykonawca · <span>ja</span><br>
@@ -355,14 +424,39 @@ document.getElementById('mute').addEventListener('click',function(){
 });
 
 /* ===== KOLEJNOSC EKRANOW — zeby usunac ekran, skasuj jego id z tej listy ===== */
-const ORDER=['s1','cookie','s2','s3','sms','s4','s5','news','s6','date','prog','rate','scroll','s7','s8'];
+const ORDER=['s1','cookie','s2','s3','catch','sms','s4','s5','whisk','news','s6','date','prog','oven','cats','rate','scroll','s7','s8'];
 let cur=0;
+/* Licznik ma klamac o SUMIE, ale numer kroku musi rosnac. Liczony automatycznie,
+   wiec po skasowaniu ekranu z ORDER dalej sie zgadza. */
+const SPECIAL={cookie:'Zanim zaczniemy',s7:'Ostatni krok',s8:'Koniec formularza'};
+(function numerujKroki(){
+  const numerowane=ORDER.filter(id=>!SPECIAL[id]);
+  const suma=i=>i<=3?3:i<=7?7:i<=12?12:19;
+  let n=0;
+  ORDER.forEach(id=>{
+    const sec=document.getElementById(id); if(!sec)return;
+    const el=sec.querySelector('.count'); if(!el)return;
+    if(SPECIAL[id]){ el.textContent=SPECIAL[id]; return; }
+    n++; el.textContent='Krok '+n+' z '+suma(n);
+  });
+})();
+let raf=null,gameTimer=null;
+function stopGames(){
+  if(raf){cancelAnimationFrame(raf);raf=null;}
+  if(gameTimer){clearInterval(gameTimer);gameTimer=null;}
+  document.querySelectorAll('.ad,.smoke').forEach(e=>e.remove());
+}
 function show(id){
+  stopGames();
   document.querySelectorAll('.step').forEach(s=>s.classList.remove('on'));
   document.getElementById(id).classList.add('on');
   cur=ORDER.indexOf(id);
   fitH();
   try{ window.scrollTo({top:0,behavior:'instant'}); }catch(e){ window.scrollTo(0,0); }
+  if(id==='catch') gameCatch();
+  if(id==='whisk') gameWhisk();
+  if(id==='oven') gameOven();
+  if(id==='cats') gameCats();
   if(id==='prog') progress();
   if(id==='s7') queue();
   if(id==='s8'){ confetti(); sYay(); } else { sPop(); }
@@ -541,6 +635,223 @@ function queue(){
       setTimeout(()=>{q.textContent='0';lab.textContent='Twoja kolej';},900);
       setTimeout(next,1900);}
   },420);
+}
+
+/* popup-reklama, ktory raz ucieka przed krzyzykiem */
+function fakeAd(parent,html,onClose){
+  const ad=document.createElement('div'); ad.className='ad';
+  ad.innerHTML='<span>'+html+'</span><b class="adx">×</b>';
+  parent.appendChild(ad);
+  const x=ad.querySelector('.adx'); let dodged=false;
+  x.addEventListener('pointerdown',ev=>{
+    ev.preventDefault(); ev.stopPropagation();
+    if(!dodged){ dodged=true; x.style.right='auto'; x.style.top='auto';
+      x.style.left='7px'; x.style.bottom='6px'; sNope(); return; }
+    ad.remove(); sClick(); if(onClose)onClose();
+  });
+  return ad;
+}
+
+/* === GRA 1: lapanie orzechow === */
+function gameCatch(){
+  const area=document.getElementById('playA'),bowl=document.getElementById('bowl'),sc=document.getElementById('scoreA');
+  area.querySelectorAll('.nut').forEach(n=>n.remove());
+  let got=0,nuts=[],last=performance.now(),spawn=300,adShown=false;
+  const W=()=>area.clientWidth,H=()=>area.clientHeight;
+  let bx=W()/2; bowl.style.left=bx+'px'; sc.textContent='0 / 8';
+  function move(e){
+    const r=area.getBoundingClientRect();
+    const cx=(e.touches&&e.touches[0]?e.touches[0].clientX:e.clientX);
+    if(cx==null)return;
+    bx=Math.max(18,Math.min(cx-r.left,r.width-18));
+    bowl.style.left=bx+'px';
+    if(e.cancelable)e.preventDefault();
+  }
+  area.onpointermove=move; area.ontouchmove=move; area.onpointerdown=move;
+  function cleanup(){ area.onpointermove=null;area.ontouchmove=null;area.onpointerdown=null; }
+  function loop(t){
+    const dt=Math.min(t-last,50); last=t; spawn-=dt;
+    if(spawn<=0){
+      spawn=500+Math.random()*400;
+      const n=document.createElement('div'); n.className='nut';
+      n.bad=Math.random()<.24;
+      n.textContent=n.bad?(Math.random()<.5?'🧅':'🧄'):'🌰';
+      n.nx=22+Math.random()*(W()-44); n.ny=-30; n.nv=.085+Math.random()*.06;
+      n.style.left=n.nx+'px'; n.style.top='-30px';
+      area.appendChild(n); nuts.push(n);
+    }
+    for(let i=nuts.length-1;i>=0;i--){
+      const n=nuts[i]; n.ny+=n.nv*dt; n.style.top=n.ny+'px';
+      if(n.ny>H()-50&&n.ny<H()-4&&Math.abs(n.nx-bx)<32){
+        if(n.bad){
+          got=Math.max(0,got-1); sc.textContent=got+' / 8';
+          toast(n.textContent==='🧅'?'To była cebula.':'To był czosnek.');
+          n.remove(); nuts.splice(i,1); continue;
+        }
+        got++; sc.textContent=got+' / 8'; tone(560+got*70,.07,'triangle',.13);
+        n.remove(); nuts.splice(i,1);
+        if(got===4&&!adShown){ adShown=true;
+          fakeAd(area,'Czy wiesz, że orzechowiec<br>można też <u>kupić</u>?<br><span style="font-size:11px;color:#b78aa0">reklama</span>'); }
+        if(got>=8){ stopGames(); cleanup(); toast('Komplet orzechów.','ok'); setTimeout(next,500); return; }
+        continue;
+      }
+      if(n.ny>H()+30){ n.remove(); nuts.splice(i,1); }
+    }
+    raf=requestAnimationFrame(loop);
+  }
+  raf=requestAnimationFrame(loop);
+}
+
+/* === GRA 2: ubijanie masy === */
+function gameWhisk(){
+  const bar=document.getElementById('whiskBar'),lab=document.getElementById('whiskLab'),
+        pc=document.getElementById('whiskPct'),btn=document.getElementById('whiskBtn');
+  let v=0,done=false;
+  const labs=[[0,'Masa jest za rzadka'],[30,'Gęstnieje…'],[60,'Już prawie'],[85,'Jeszcze chwilę']];
+  function render(){
+    bar.style.width=v+'%'; pc.textContent=Math.floor(v)+'%';
+    let l=labs[0][1]; labs.forEach(([t,x])=>{ if(v>=t) l=x; });
+    lab.textContent=l;
+    if(v>=100&&!done){ done=true; stopGames(); btn.onclick=null;
+      lab.textContent='Masa idealna.'; toast('Ubite.','ok'); setTimeout(next,600); }
+  }
+  let taps=0,frozen=false,adDone=false;
+  btn.style.position='relative';
+  btn.onclick=()=>{
+    if(done||frozen)return;
+    v=Math.min(100,v+6); tone(260+v*5,.045,'square',.08); taps++;
+    if(taps%7===0){ btn.style.left=(Math.random()*110-55)+'px'; btn.style.top=(Math.random()*34-17)+'px'; }
+    if(v>=48&&!adDone){
+      adDone=true; frozen=true;
+      fakeAd(document.querySelector('#whisk'),'Przerwa techniczna.<br>Masa odpoczywa.',()=>{frozen=false;});
+    }
+    render();
+  };
+  let cool=0;
+  gameTimer=setInterval(()=>{
+    if(done||frozen)return;
+    v=Math.max(0,v-1.1);
+    if(cool>0) cool--;
+    if(v>24&&cool===0&&Math.random()<.055){
+      v=Math.max(0,v-15); cool=38; sNope(); toast('Masa opadła.');
+    }
+    render();
+  },100);
+  render();
+}
+
+/* === GRA 3: piekarnik === */
+let ovPos=0,ovDir=1,ovStart=40,ovW=13,ovTries=0,ovDone=false,ovSpdBoost=1;
+function ovPlaceZone(){
+  ovStart=8+Math.random()*(84-ovW);
+  const z=document.getElementById('ovZone');
+  z.style.left=ovStart+'%'; z.style.width=ovW+'%';
+}
+function gameOven(){
+  ovTries=0; ovW=13; ovDone=false; ovPos=0; ovDir=1; ovSpdBoost=1; ovPlaceZone();
+  const b0=document.getElementById('ovBurn'); if(b0) b0.textContent='0';
+  let ovSpd=1.9,tick=0;
+  gameTimer=setInterval(()=>{
+    tick++;
+    if(tick%55===0){ ovSpd=1.4+Math.random()*.8; }
+    if(tick%150===0){
+      const sm=document.createElement('div'); sm.className='smoke'; sm.textContent='💨';
+      sm.style.left='-14%'; document.querySelector('#oven .zone').parentNode.appendChild(sm);
+      let sx=-14; const si=setInterval(()=>{ sx+=2.4; sm.style.left=sx+'%';
+        if(sx>114){ clearInterval(si); sm.remove(); } },16);
+    }
+    ovPos+=ovDir*ovSpd*ovSpdBoost;
+    if(ovPos>=100){ovPos=100;ovDir=-1}
+    if(ovPos<=0){ovPos=0;ovDir=1}
+    document.getElementById('ovNeedle').style.left=ovPos+'%';
+  },16);
+}
+function ovenTap(){
+  if(ovDone)return;
+  if(ovPos>=ovStart&&ovPos<=ovStart+ovW){
+    ovDone=true; stopGames(); sYay(); toast('Idealnie wypieczony.','ok'); setTimeout(next,700);
+  }else{
+    ovTries++; ovW=Math.min(40,ovW+5+ovTries*2); ovPlaceZone();
+    const b=document.getElementById('ovBurn'); if(b) b.textContent=ovTries;
+    ovSpdBoost=2.6; setTimeout(()=>{ovSpdBoost=1;},1400);
+    toast(ovTries===1?'Przypalone. Pole się poszerza.':'Znowu przypalone — ale jest łatwiej.');
+  }
+}
+
+/* === GRA 4: tanczace koty === */
+function gameCats(){
+  const area=document.getElementById('playC'),cake=document.getElementById('cake'),
+        sc=document.getElementById('catScore'),st=document.getElementById('catSteal');
+  area.querySelectorAll('.cat').forEach(c=>c.remove());
+  let shooed=0,stolen=0,cats=[],last=performance.now(),spawn=200,done=false;
+  sc.textContent='0 / 6'; st.textContent='0';
+  const W=()=>area.clientWidth,H=()=>area.clientHeight;
+  function spawnCat(){
+    const w=W(),h=H(),side=Math.floor(Math.random()*4);
+    let x,y;
+    if(side===0){x=Math.random()*w;y=-22;}
+    else if(side===1){x=w+22;y=Math.random()*h;}
+    else if(side===2){x=Math.random()*w;y=h+22;}
+    else {x=-22;y=Math.random()*h;}
+    const c=document.createElement('div'); c.className='cat';
+    c.mouse=Math.random()<.20;
+    c.textContent=c.mouse?'🐭':'🐱';
+    /* ta sama predkosc co koty — inaczej myszy szybciej schodza z planszy
+       i zwalniaja limit, przez co rodzi sie ich 3x za duzo */
+    c.cx=x; c.cy=y; c.sp=.019+Math.random()*.016; c.gone=false;
+    c.style.left=x+'px'; c.style.top=y+'px';
+    c.addEventListener('pointerdown',ev=>{
+      ev.preventDefault(); ev.stopPropagation();
+      if(c.gone||done)return;
+      c.gone=true; c.classList.add('sad'); c.style.top=(c.cy-46)+'px';
+      setTimeout(()=>c.remove(),600);
+      if(c.mouse){
+        shooed=Math.max(0,shooed-1); sc.textContent=shooed+' / 6';
+        toast('To była mysz. Mysz nie chce ciasta.');
+        return;
+      }
+      c.textContent='😿';
+      tone(520,.1,'triangle',.12,300);
+      shooed++; sc.textContent=shooed+' / 6';
+      setTimeout(()=>c.remove(),600);
+      if(shooed>=6&&!done){
+        done=true; stopGames();
+        toast(stolen?'Obronione. Prawie w całości.':'Ani jednego kęsa. Brawo.','ok');
+        setTimeout(next,700);
+      }
+    });
+    area.appendChild(c); cats.push(c);
+  }
+  let burst=0,burstIn=5200;
+  function loop(t){
+    const dt=Math.min(t-last,50); last=t; spawn-=dt;
+    burstIn-=dt; if(burst>0) burst-=dt;
+    if(burstIn<=0&&!done){ burstIn=7000; burst=1600; toast('Koty usłyszały otwieranie lodówki.'); }
+    if(spawn<=0&&cats.filter(c=>!c.gone).length<5){ spawn=620+Math.random()*520; spawnCat(); }
+    const tx=W()/2, ty=H()/2;
+    for(let i=cats.length-1;i>=0;i--){
+      const c=cats[i];
+      if(c.gone){ if(!c.isConnected) cats.splice(i,1); continue; }
+      const dx=tx-c.cx, dy=ty-c.cy, d=Math.hypot(dx,dy)||1;
+      const mul=burst>0?1.7:1;
+      c.cx+=dx/d*c.sp*mul*dt; c.cy+=dy/d*c.sp*mul*dt;
+      c.style.left=c.cx+'px'; c.style.top=c.cy+'px';
+      if(d<34){
+        c.gone=true;
+        if(c.mouse){ c.classList.add('sad'); c.style.top=(c.cy+50)+'px';
+          setTimeout(()=>c.remove(),600); continue; }
+        c.textContent='😼'; stolen++; st.textContent=stolen;
+        if(shooed>0){ shooed--; sc.textContent=shooed+' / 6'; }
+        toast('Kot odgryzł kawałek. Licznik w dół.');
+        cake.classList.add('hit'); setTimeout(()=>cake.classList.remove('hit'),380);
+        tone(180,.16,'square',.1);
+        c.classList.add('sad'); c.style.top=(c.cy+50)+'px';
+        setTimeout(()=>c.remove(),600);
+      }
+    }
+    raf=requestAnimationFrame(loop);
+  }
+  raf=requestAnimationFrame(loop);
 }
 
 /* konfetti */
