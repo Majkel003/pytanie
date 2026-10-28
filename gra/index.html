@@ -184,9 +184,28 @@ const start = UI.pokazNakladke('ekran', {
   wskazowka: '<b>Lewy kciuk</b> chodzi<br><b>Prawa strona</b> rozgląda<br>Najlepiej w słuchawkach'
 });
 
+/* Gdyby dźwięk nie ruszył (zdarza się w webview i przy włączonej ciszy),
+   nie zostawiamy gracza w niepewności: pokazujemy pasek i próbujemy
+   ponownie przy każdym kolejnym dotknięciu ekranu. */
+async function pilnujDzwieku() {
+  if (dzwiek.gotowy && dzwiek.ctx.state === 'running') return true;
+  UI.podpowiedz('Stuknij, żeby włączyć dźwięk');
+  const ponow = async () => {
+    await dzwiek.odblokuj();
+    if (dzwiek.ctx && dzwiek.ctx.state === 'running') {
+      dzwiek.start();
+      UI.podpowiedz('');
+      removeEventListener('pointerdown', ponow);
+    }
+  };
+  addEventListener('pointerdown', ponow);
+  return false;
+}
+
 start.addEventListener('click', async () => {
   await dzwiek.odblokuj();          // musi paść w geście, inaczej Safari milczy
   dzwiek.start();
+  pilnujDzwieku();
   await UI.zaslon(420);
   UI.ukryjNakladke('ekran');
   UI.hud(true);
