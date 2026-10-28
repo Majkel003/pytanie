@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Quiz o nas</title>
+<meta name="description" content="Kilkanaście pytań o nas dwoje.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Oswald:wght@400;500&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#f7f0e0; --card:#fffdf7; --ink:#2b231b; --mar:#7c2e1c;
+  --gold:#a3814a; --goldln:#b99a63; --muted:#7a6753;
+  --ok:#3f7d52; --okbg:#e8f3ea; --bad:#a83c3c; --badbg:#fbeded;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{height:auto}
+body{
+  font-family:'EB Garamond',Georgia,serif;color:var(--ink);
+  background:radial-gradient(rgba(124,46,28,.05) .9px,transparent 1px) 0 0/14px 14px,
+             linear-gradient(170deg,#fbf5e8 0%,var(--paper) 100%);
+  background-attachment:fixed;
+  min-height:100vh;min-height:100svh;min-height:var(--appH,100svh);
+  display:flex;align-items:flex-start;justify-content:center;
+  padding:max(18px,env(safe-area-inset-top)) 15px max(18px,env(safe-area-inset-bottom));
+  overflow-x:hidden}
+.wrap{width:100%;max-width:430px;margin:auto 0}
+.card{background:var(--card);border:1.5px solid var(--mar);border-radius:3px;
+  box-shadow:0 14px 42px rgba(124,46,28,.14);padding:26px 22px 22px;position:relative}
+.card::before{content:'';position:absolute;inset:4px;border:.6px solid var(--goldln);
+  border-radius:2px;pointer-events:none}
+.scr{display:none}.scr.on{display:block;animation:in .34s cubic-bezier(.2,1.1,.4,1)}
+@keyframes in{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.kicker{font-family:Oswald,sans-serif;font-size:10px;font-weight:500;letter-spacing:.26em;
+  text-transform:uppercase;color:var(--mar);text-align:center;margin-bottom:12px}
+h1{font-family:'Playfair Display',serif;font-weight:800;font-size:27px;line-height:1.14;
+  text-align:center;color:var(--ink);margin-bottom:10px}
+h1.sm{font-size:21px;text-align:left;margin-bottom:14px}
+.orn{display:flex;align-items:center;gap:9px;width:150px;margin:0 auto 16px;color:var(--gold);font-size:12px}
+.orn i{flex:1;border-top:.8px solid var(--goldln)}
+p.lead{font-size:16px;line-height:1.5;color:var(--muted);text-align:center;margin-bottom:20px;font-style:italic}
+button,.opt{font-family:'EB Garamond',serif;cursor:pointer}
+.go{display:block;width:100%;background:var(--mar);color:#fdf6e8;border:none;border-radius:2px;
+  padding:14px;font-size:17px;font-weight:600;letter-spacing:.02em;font-family:Oswald,sans-serif;
+  text-transform:uppercase;letter-spacing:.14em;font-size:13px}
+.go:active{transform:scale(.98)}
+.prog{display:flex;gap:4px;justify-content:center;margin-bottom:16px;flex-wrap:wrap}
+.dot{width:7px;height:7px;border-radius:50%;background:#e6dcc6;transition:.25s}
+.dot.done{background:var(--gold)}.dot.now{background:var(--mar);transform:scale(1.35)}
+.qn{font-family:Oswald,sans-serif;font-size:10px;letter-spacing:.22em;text-transform:uppercase;
+  color:var(--gold);margin-bottom:8px}
+.opts{display:flex;flex-direction:column;gap:8px}
+.opt{background:#fff;border:1px solid #e7dcc4;border-radius:2px;padding:13px 14px;font-size:16px;
+  line-height:1.35;color:var(--ink);transition:.15s;text-align:left}
+.opt:hover{border-color:var(--gold)}
+.opt.ok{background:var(--okbg);border-color:var(--ok);color:#255c36;font-weight:600}
+.opt.bad{background:var(--badbg);border-color:var(--bad);color:#8a2f2f}
+.opt.dim{opacity:.45}
+.note{margin-top:14px;padding:12px 13px;background:#faf3e2;border-left:2.5px solid var(--gold);
+  font-size:15px;line-height:1.5;color:#5e4c3a;font-style:italic;display:none}
+.note.on{display:block;animation:in .3s}
+.nx{margin-top:14px;display:none}.nx.on{display:block}
+.big{font-family:'Playfair Display',serif;font-size:58px;font-weight:800;color:var(--mar);
+  text-align:center;line-height:1}
+.small{font-family:Oswald,sans-serif;font-size:11px;letter-spacing:.22em;text-transform:uppercase;
+  color:var(--gold);text-align:center;margin-top:6px}
+.verdict{font-size:17px;line-height:1.55;text-align:center;color:var(--ink);margin:18px 0 0}
+.sig{font-family:Oswald,sans-serif;font-size:10px;letter-spacing:.22em;text-transform:uppercase;
+  color:var(--gold);text-align:center;border-top:.8px solid var(--goldln);padding-top:12px;margin-top:20px}
+@media (max-height:700px){
+  .card{padding:20px 18px 18px}h1{font-size:23px}h1.sm{font-size:19px}
+  .opt{padding:11px 12px;font-size:15px}p.lead{font-size:15px;margin-bottom:16px}
+  .big{font-size:46px}
+}
+</style>
+</head>
+<body>
+<div class="wrap"><div class="card">
+
+  <section class="scr on" id="start">
+    <div class="kicker">Skrzyneczka · listopad</div>
+    <h1>Quiz o nas</h1>
+    <div class="orn"><i></i>❦<i></i></div>
+    <p class="lead">Kilkanaście pytań. Bez podpowiedzi, bez ściągania i&nbsp;bez konsekwencji.<br>Wynik poznasz na końcu.</p>
+    <button class="go" onclick="begin()">Zaczynamy</button>
+  </section>
+
+  <section class="scr" id="q">
+    <div class="prog" id="prog"></div>
+    <div class="qn" id="qnum">Pytanie 1</div>
+    <h1 class="sm" id="qtext">—</h1>
+    <div class="opts" id="opts"></div>
+    <div class="note" id="note"></div>
+    <button class="go nx" id="nx" onclick="nextQ()">Dalej</button>
+  </section>
+
+  <section class="scr" id="end">
+    <div class="kicker">Wynik</div>
+    <div class="big" id="score">0/0</div>
+    <div class="small" id="pct">0%</div>
+    <div class="orn" style="margin-top:18px"><i></i>❦<i></i></div>
+    <p class="verdict" id="verdict"></p>
+    <div class="sig">Ciąg dalszy nastąpi</div>
+  </section>
+
+</div></div>
+
+<script>
+/* ════════════════════════════════════════════════════════════════
+   PYTANIA — edytuj tutaj i nic więcej.
+   q    : treść pytania
+   a    : lista odpowiedzi
+   ok   : numer poprawnej (liczymy od 0, czyli pierwsza = 0)
+   note : zdanie, które pokaże się po odpowiedzi (możesz zostawić puste)
+
+   Pytanie z pustym "q" jest automatycznie pomijane,
+   więc możesz skasować treść zamiast usuwać cały blok.
+   ════════════════════════════════════════════════════════════════ */
+const QUESTIONS = [
+
+  /* ——— te wypełniłem za Ciebie, bo dotyczą prezentów ——— */
+  { q:'Jaki kod otwierał kłódkę przy grze terenowej?',
+    a:['1408','3847','2024','0000'], ok:1,
+    note:'Trzy cyfry zebrałaś po drodze, czwartą dostałaś jako ocenę z kartkówki.' },
+
+  { q:'W którym budynku w Piotrowicach była Twoja podstawówka?',
+    a:['W remizie','W zabytkowym dworku','Przy kaplicy','W budynku obok sklepu'], ok:1,
+    note:'Najpierw mleczarnia, potem biblioteka, potem szkoła. Potem Ty — i cisza od 2010.' },
+
+  { q:'Ile ekranów miała strona z pytaniem o orzechowca?',
+    a:['Trzy','Siedem','Dziewiętnaście','Jeden, ale podstępny'], ok:2,
+    note:'Licznik kłamał od samego początku. „Krok 1 z 3" było kłamstwem numer jeden.' },
+
+  { q:'Co trzeba było zrobić, żeby kliknąć „Tak, chcę"?',
+    a:['Nic, stał spokojnie','Gonić go po ekranie','Odpowiedzieć na pytanie','Poczekać minutę'], ok:1,
+    note:'Po sześciu próbach sam się poddawał. Zawsze się poddaję szybciej, niż zapowiadam.' },
+
+  { q:'Na którą noc jest bilet „Noc spadających gwiazd"?',
+    a:['Sylwester','13/14 grudnia','Pierwszy śnieg','Dowolną — jest bezterminowy'], ok:1,
+    note:'Geminidy. Jedyny bilet w skrzyneczce z terminem, bo tego dnia decyduje niebo, nie my.' },
+
+  /* ——— TE UZUPEŁNIJ SAM ———
+     Wpisz treść, cztery odpowiedzi i numer poprawnej.
+     Dopóki "q" jest puste, pytanie się nie pokaże.               */
+
+  { q:'', a:['','','',''], ok:0, note:'' },   /* np. gdzie się pierwszy raz spotkaliście */
+  { q:'', a:['','','',''], ok:0, note:'' },   /* np. jaki był pierwszy wspólny film      */
+  { q:'', a:['','','',''], ok:0, note:'' },   /* np. co zamawia zawsze, gdy nie wie      */
+  { q:'', a:['','','',''], ok:0, note:'' },   /* np. która piosenka to „nasza"           */
+  { q:'', a:['','','',''], ok:0, note:'' },   /* np. czego się boi, a nie przyznaje      */
+  { q:'', a:['','','',''], ok:0, note:'' },   /* np. gdzie był pierwszy pocałunek        */
+  { q:'', a:['','','',''], ok:0, note:'' },   /* np. co powiedziałaś pierwszego dnia     */
+
+].filter(x => x.q && x.q.trim() && x.a.filter(Boolean).length >= 2);
+
+/* ════════════════════════════════════════════════════════════════ */
+
+function fitH(){
+  const h=Math.max(window.innerHeight||0,(window.visualViewport&&window.visualViewport.height)||0,420);
+  document.documentElement.style.setProperty('--appH',h+'px');
+}
+fitH(); addEventListener('resize',fitH); addEventListener('orientationchange',()=>setTimeout(fitH,250));
+if(window.visualViewport) visualViewport.addEventListener('resize',fitH);
+
+let i=0, score=0, locked=false;
+const $=id=>document.getElementById(id);
+function scr(id){ document.querySelectorAll('.scr').forEach(s=>s.classList.remove('on'));
+  $(id).classList.add('on'); fitH(); try{window.scrollTo({top:0,behavior:'instant'})}catch(e){window.scrollTo(0,0)} }
+
+function begin(){
+  if(!QUESTIONS.length){ alert('Brak pytań — uzupełnij listę w pliku.'); return; }
+  $('prog').innerHTML = QUESTIONS.map(()=>'<span class="dot"></span>').join('');
+  i=0; score=0; scr('q'); render();
+}
+function render(){
+  locked=false;
+  const Q=QUESTIONS[i];
+  [...$('prog').children].forEach((d,n)=>{ d.className='dot'+(n<i?' done':n===i?' now':''); });
+  $('qnum').textContent='Pytanie '+(i+1)+' z '+QUESTIONS.length;
+  $('qtext').textContent=Q.q;
+  $('note').className='note'; $('note').textContent=Q.note||'';
+  $('nx').className='go nx';
+  $('nx').textContent = (i===QUESTIONS.length-1) ? 'Pokaż wynik' : 'Dalej';
+  $('opts').innerHTML='';
+  Q.a.filter(Boolean).forEach((txt,n)=>{
+    const b=document.createElement('button'); b.className='opt'; b.textContent=txt;
+    b.onclick=()=>answer(n,b); $('opts').appendChild(b);
+  });
+}
+function answer(n,btn){
+  if(locked) return; locked=true;
+  const Q=QUESTIONS[i], good=(n===Q.ok);
+  if(good) score++;
+  [...$('opts').children].forEach((b,k)=>{
+    if(k===Q.ok) b.classList.add('ok');
+    else if(k===n) b.classList.add('bad');
+    else b.classList.add('dim');
+    b.onclick=null;
+  });
+  if(Q.note){ $('note').textContent=Q.note; $('note').classList.add('on'); }
+  $('nx').classList.add('on');
+  fitH();
+}
+function nextQ(){
+  if(i<QUESTIONS.length-1){ i++; render(); }
+  else finish();
+}
+function finish(){
+  const n=QUESTIONS.length, p=Math.round(score/n*100);
+  $('score').textContent=score+'/'+n;
+  $('pct').textContent=p+'% trafień';
+  let v;
+  if(p===100) v='Komplet. Trochę mnie przeraża, jak dobrze mnie znasz.';
+  else if(p>=75) v='Bardzo dobrze. Resztę dopowiem przy najbliższej kolacji.';
+  else if(p>=50) v='Średnio — ale i tak zostajesz, bo bilety są bezterminowe.';
+  else v='Słabo. Na szczęście ten egzamin nie był obowiązkowy ani punktowany.';
+  $('verdict').textContent=v;
+  scr('end');
+}
+</script>
+</body>
+</html>
