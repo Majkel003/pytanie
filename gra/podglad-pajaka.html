@@ -15,8 +15,8 @@
 <canvas id="c"></canvas>
 <div id="info"></div>
 <script type="module">
-import * as THREE from './lib/three.module.js';
-import { Pajak } from './pajak.js';
+import * as THREE from './lib/three.module.js?v=1793185281';
+import { Pajak } from './pajak.js?v=1793185281';
 
 const r = new THREE.WebGLRenderer({ canvas: document.getElementById('c'), antialias: true });
 r.setPixelRatio(Math.min(devicePixelRatio, 2));

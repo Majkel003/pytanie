@@ -9,10 +9,31 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,600;1,400&family=Oswald:wght@300;400&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styl.css">
+<link rel="stylesheet" href="styl.css?v=1793185281">
+<script>
+/* Łapacz awarii: bez tego błąd w module daje tylko czarny ekran
+   i nie wiadomo, czy gra się zawiesiła, czy jeszcze wczytuje. */
+(function () {
+  function pokaz(co) {
+    var el = document.getElementById('awaria');
+    if (!el) return;
+    el.style.cssText = 'position:fixed;inset:0;z-index:90;padding:26px;overflow:auto;' +
+      'background:#0b0a10;color:#e8e2d6;font:13px/1.6 ui-monospace,monospace;white-space:pre-wrap';
+    el.textContent = 'Gra się nie uruchomiła.\n\n' + co +
+      '\n\nSpróbuj odświeżyć z pominięciem pamięci podręcznej.';
+  }
+  addEventListener('error', function (e) {
+    pokaz((e.message || 'błąd wczytywania') + '\n' + (e.filename || '') + ':' + (e.lineno || ''));
+  }, true);
+  addEventListener('unhandledrejection', function (e) {
+    pokaz('Nieobsłużony błąd: ' + (e.reason && e.reason.message ? e.reason.message : e.reason));
+  });
+})();
+</script>
 </head>
 <body>
 
+<div id="awaria"></div>
 <canvas id="plotno"></canvas>
 
 <div id="winieta"></div>
@@ -47,11 +68,11 @@
 <div class="nakladka" id="ekran"></div>
 
 <script type="module">
-import { Gra, CELL } from './gra.js';
-import { UI } from './ui.js';
-import { Dzwiek } from './dzwiek.js';
-import { Swiat } from './swiat.js';
-import { Rekwizyty } from './rekwizyty.js';
+import { Gra, CELL } from './gra.js?v=1793185281';
+import { UI } from './ui.js?v=1793185281';
+import { Dzwiek } from './dzwiek.js?v=1793185281';
+import { Swiat } from './swiat.js?v=1793185281';
+import { Rekwizyty } from './rekwizyty.js?v=1793185281';
 
 const gra = new Gra(document.getElementById('plotno'));
 const dzwiek = new Dzwiek();

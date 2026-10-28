@@ -1,6 +1,6 @@
-import * as THREE from './lib/three.module.js';
-import { GLTFLoader } from './lib/GLTFLoader.js';
-import { CELL } from './gra.js';
+import * as THREE from './lib/three.module.js?v=1793185281';
+import { GLTFLoader } from './lib/GLTFLoader.js?v=1793185281';
+import { CELL } from './gra.js?v=1793185281';
 
 /* Modele wstawiane do labiryntu. Każdy wczytywany raz i powielany przez
    klonowanie, bo kopia dzieli geometrię i teksturę z oryginałem i nie

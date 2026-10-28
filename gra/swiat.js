@@ -1,6 +1,6 @@
-import * as THREE from './lib/three.module.js';
-import { Postac, wczytajSprite } from './postacie.js';
-import { CELL } from './gra.js';
+import * as THREE from './lib/three.module.js?v=1793185281';
+import { Postac, wczytajSprite } from './postacie.js?v=1793185281';
+import { CELL } from './gra.js?v=1793185281';
 
 /* Logika świata: kto gdzie stoi, kto za kim chodzi, kiedy otwiera się wyjście.
    Silnik (gra.js) nie wie nic o fabule, a to tutaj nie dotyka renderowania. */
