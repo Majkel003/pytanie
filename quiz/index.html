@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>Quiz o nas</title>
 <meta name="description" content="Kilkanaście pytań o nas dwoje.">
+<meta name="robots" content="noindex,nofollow,noarchive,noimageindex">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Oswald:wght@400;500&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
@@ -50,13 +51,98 @@ button,.opt{font-family:'EB Garamond',serif;cursor:pointer}
 .dot.done{background:var(--gold)}.dot.now{background:var(--mar);transform:scale(1.35)}
 .qn{font-family:Oswald,sans-serif;font-size:10px;letter-spacing:.22em;text-transform:uppercase;
   color:var(--gold);margin-bottom:8px}
+.fields{display:flex;flex-direction:column;gap:9px;margin-bottom:12px}
+.field label{display:block;font-family:Oswald,sans-serif;font-size:9px;letter-spacing:.2em;
+  text-transform:uppercase;color:var(--gold);margin-bottom:4px;text-align:left}
+.field input{width:100%;font-family:'EB Garamond',serif;font-size:16px;padding:11px 12px;
+  border:1px solid #e7dcc4;border-radius:2px;background:#fff;color:var(--ink);outline:none;text-align:center}
+.field input:focus{border-color:var(--gold)}
+.field input.zle{border-color:var(--bad);background:var(--badbg)}
+.field input.dobre,.txtq input.dobre{border-color:var(--ok);background:var(--okbg);color:#255c36;font-weight:600}
+.txtq{text-align:center}
+.txtq input[type=text]{width:100%;font-family:'EB Garamond',serif;font-size:17px;text-align:center;
+  padding:13px 12px;border:1px solid #e7dcc4;border-radius:2px;background:#fff;color:var(--ink);
+  outline:none;margin-bottom:10px}
+.txtq input[type=text]:focus{border-color:var(--gold)}
+.txtq input.zle{border-color:var(--bad);background:var(--badbg)}
+.txtq .go{margin-bottom:8px}
+.poddaj{font-family:Oswald,sans-serif;font-size:10px;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--gold);text-decoration:underline;cursor:pointer;display:none}
+.poddaj.on{display:inline-block}
+.rate{text-align:center}
+.rateval{font-family:'Playfair Display',serif;font-size:52px;font-weight:800;color:var(--mar);line-height:1;margin-bottom:2px}
+.rate input[type=range]{width:100%;accent-color:var(--mar);height:30px;margin:6px 0 2px}
+.scale{display:flex;justify-content:space-between;font-family:Oswald,sans-serif;font-size:10px;
+  letter-spacing:.14em;color:var(--gold);margin-bottom:14px}
+.rate .go:disabled{opacity:.45;cursor:default}
+.qimg{display:block;max-width:100%;max-height:38vh;width:auto;margin:0 auto 14px;
+  border:1px solid var(--goldln);border-radius:2px;box-shadow:0 6px 18px rgba(124,46,28,.13)}
+.imgwrap{display:none;text-align:center}.imgwrap.on{display:block}
 .opts{display:flex;flex-direction:column;gap:8px}
 .opt{background:#fff;border:1px solid #e7dcc4;border-radius:2px;padding:13px 14px;font-size:16px;
   line-height:1.35;color:var(--ink);transition:.15s;text-align:left}
 .opt:hover{border-color:var(--gold)}
-.opt.ok{background:var(--okbg);border-color:var(--ok);color:#255c36;font-weight:600}
-.opt.bad{background:var(--badbg);border-color:var(--bad);color:#8a2f2f}
-.opt.dim{opacity:.45}
+.opt.wybrane{background:#f5ecd8;border-color:var(--gold);font-weight:600}
+
+
+.hintline{font-size:14px;line-height:1.45;color:var(--bad);margin-top:12px;min-height:1px;font-style:italic}
+.hintline.pod{color:var(--gold);font-style:normal}
+.hintline.pod b{font-family:Oswald,sans-serif;font-size:10px;letter-spacing:.16em;text-transform:uppercase;display:block;opacity:.7;font-weight:400}
+.hintline.pod div{margin-top:7px}
+.revtitle{font-family:Oswald,sans-serif;font-size:10px;letter-spacing:.22em;text-transform:uppercase;
+  color:var(--gold);text-align:center;margin:22px 0 10px;border-top:.8px solid var(--goldln);padding-top:14px}
+/* ——— minigry: wszystko na stuknięcia, zero przeciągania (Safari iOS) ——— */
+.gwrap{touch-action:manipulation;-webkit-user-select:none;user-select:none}
+.gtxt{font-size:14.5px;line-height:1.45;color:var(--muted);font-style:italic;margin-bottom:14px;text-align:center}
+.gstat{font-family:Oswald,sans-serif;font-size:11px;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--gold);text-align:center;margin-top:12px}
+.pary{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;max-width:270px;margin:0 auto}
+.kar{aspect-ratio:1;border:1px solid #e0d2b4;border-radius:3px;background:#fdf7e9;display:flex;
+  align-items:center;justify-content:center;font-size:27px;cursor:pointer;
+  -webkit-tap-highlight-color:transparent;transition:background .15s,border-color .15s}
+.kar .ikona{opacity:0;transition:opacity .18s}
+.kar.odkryta{background:#fff;border-color:var(--gold)}
+.kar.odkryta .ikona{opacity:1}
+.kar.zdjeta{background:var(--okbg);border-color:var(--ok)}
+.kar.zdjeta .ikona{opacity:.55}
+.arena{position:relative;height:250px;border:1px solid #e7dcc4;border-radius:3px;background:#fdf9ee;
+  overflow:hidden;touch-action:none}
+.serce{position:absolute;font-size:30px;cursor:pointer;transform:translate(-50%,-50%) scale(1);
+  transition:transform .12s;-webkit-tap-highlight-color:transparent}
+.serce:active{transform:translate(-50%,-50%) scale(.8)}
+.pady{display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:250px;margin:0 auto}
+.pad{aspect-ratio:1;border-radius:4px;cursor:pointer;opacity:.4;transition:opacity .12s,transform .12s;
+  -webkit-tap-highlight-color:transparent}
+.pad.swieci{opacity:1;transform:scale(1.04)}
+.pad.p0{background:#d98c8c}.pad.p1{background:#8cae9e}.pad.p2{background:#d9b87a}.pad.p3{background:#9aa6c4}
+.review{text-align:left}
+.rev{border:1px solid #e7dcc4;border-left-width:3px;border-radius:2px;margin-bottom:8px;background:#fff}
+.rev.good{border-left-color:var(--ok)}
+.rev.bad{border-left-color:var(--bad)}
+.revhead{display:flex;align-items:flex-start;gap:9px;padding:11px;cursor:pointer}
+.revhead .mk{flex:none;width:17px;text-align:center;font-size:14px;line-height:1.3}
+.rev.good .mk{color:var(--ok)}.rev.bad .mk{color:var(--bad)}.rev.neu .mk{color:var(--gold)}
+.revhead .tt{flex:1;font-size:14.5px;line-height:1.35;font-weight:600;color:var(--ink)}
+.revhead .ch{flex:none;color:var(--gold);font-size:13px;transition:transform .2s;line-height:1.3}
+.rev.open .revhead .ch{transform:rotate(90deg)}
+.revbody{display:none;padding:0 11px 12px 37px}
+.rev.open .revbody{display:block;animation:in .22s}
+.ro{font-size:14px;line-height:1.35;padding:8px 10px;border:1px solid #eee3cd;border-radius:2px;
+  margin-bottom:5px;display:flex;align-items:center;gap:8px}
+.ro.corr{background:var(--okbg);border-color:var(--ok);color:#255c36;font-weight:600}
+.ro.wrong{background:var(--badbg);border-color:var(--bad);color:#8a2f2f}
+.ro .tg{font-family:Oswald,sans-serif;font-size:8.5px;letter-spacing:.14em;text-transform:uppercase;
+  margin-left:auto;flex:none;opacity:.85}
+.rn{font-size:13.5px;line-height:1.45;color:#7a6753;font-style:italic;margin-top:7px}
+.rimg{max-width:160px;border:1px solid var(--goldln);border-radius:2px;margin-top:8px;display:block}
+
+
+
+
+
+
+
+
 .note{margin-top:14px;padding:12px 13px;background:#faf3e2;border-left:2.5px solid var(--gold);
   font-size:15px;line-height:1.5;color:#5e4c3a;font-style:italic;display:none}
 .note.on{display:block;animation:in .3s}
@@ -90,9 +176,9 @@ button,.opt{font-family:'EB Garamond',serif;cursor:pointer}
     <div class="prog" id="prog"></div>
     <div class="qn" id="qnum">Pytanie 1</div>
     <h1 class="sm" id="qtext">—</h1>
+    <div class="imgwrap" id="imgwrap"><img class="qimg" id="qimg" alt=""></div>
     <div class="opts" id="opts"></div>
-    <div class="note" id="note"></div>
-    <button class="go nx" id="nx" onclick="nextQ()">Dalej</button>
+    <div class="hintline" id="hint"></div>
   </section>
 
   <section class="scr" id="end">
@@ -101,6 +187,8 @@ button,.opt{font-family:'EB Garamond',serif;cursor:pointer}
     <div class="small" id="pct">0%</div>
     <div class="orn" style="margin-top:18px"><i></i>❦<i></i></div>
     <p class="verdict" id="verdict"></p>
+    <div class="revtitle">Jak poszło pytanie po pytaniu</div>
+    <div class="review" id="review"></div>
     <div class="sig">Ciąg dalszy nastąpi</div>
   </section>
 
@@ -113,46 +201,153 @@ button,.opt{font-family:'EB Garamond',serif;cursor:pointer}
    a    : lista odpowiedzi
    ok   : numer poprawnej (liczymy od 0, czyli pierwsza = 0)
    note : zdanie, które pokaże się po odpowiedzi (możesz zostawić puste)
+   img  : nazwa pliku ze zdjęciem obok quizu, np. 'foto1.jpg' (opcjonalne)
+   imgAfter : zdjęcie pokazywane DOPIERO po odpowiedzi (gdy pokazanie go wcześniej
+          zdradziłoby rozwiązanie)
+   type : 'text' = odpowiedź wpisywana z klawiatury; must = lista grup słów,
+          z każdej grupy musi paść choć jedno; pokaz = odpowiedź do ujawnienia
+   type : 'rate' = suwak 0–10 zamiast odpowiedzi; min = najniższa przyjmowana ocena
+          (pytania z suwakiem nie liczą się do wyniku)
 
    Pytanie z pustym "q" jest automatycznie pomijane,
    więc możesz skasować treść zamiast usuwać cały blok.
    ════════════════════════════════════════════════════════════════ */
 const QUESTIONS = [
 
-  /* ——— te wypełniłem za Ciebie, bo dotyczą prezentów ——— */
-  { q:'Jaki kod otwierał kłódkę przy grze terenowej?',
-    a:['1408','3847','2024','0000'], ok:1,
-    note:'Trzy cyfry zebrałaś po drodze, czwartą dostałaś jako ocenę z kartkówki.' },
+  { q:'W jakiej knajpie się poznaliśmy?',
+    a:['Kawiarnia Cynamon','Cafe Mari','Cafe Lento','Bistro Pod Lipą'], ok:1,
+    note:'Tam się zaczęło. Cała reszta to już tylko konsekwencje.' },
 
-  { q:'W którym budynku w Piotrowicach była Twoja podstawówka?',
-    a:['W remizie','W zabytkowym dworku','Przy kaplicy','W budynku obok sklepu'], ok:1,
-    note:'Najpierw mleczarnia, potem biblioteka, potem szkoła. Potem Ty — i cisza od 2010.' },
+  { q:'A przez kogo w ogóle się poznaliśmy?',
+    a:['Przez Remcioszka','Przez aplikację','Na weselu','W pracy'], ok:0,
+    note:'Przez Remcioszka. Powinien dostawać procent od każdej naszej rocznicy.' },
 
-  { q:'Ile ekranów miała strona z pytaniem o orzechowca?',
-    a:['Trzy','Siedem','Dziewiętnaście','Jeden, ale podstępny'], ok:2,
-    note:'Licznik kłamał od samego początku. „Krok 1 z 3" było kłamstwem numer jeden.' },
+  { q:'Kto pierwszy zapłacił za drugą osobę?',
+    a:['Ty za mnie','Ja za Ciebie','Każdy płacił za siebie','Zapłacił ktoś trzeci'], ok:1,
+    note:'Ja za Ciebie. Drobiazg, a pamiętam go lepiej niż niejedną większą rzecz.' },
 
-  { q:'Co trzeba było zrobić, żeby kliknąć „Tak, chcę"?',
-    a:['Nic, stał spokojnie','Gonić go po ekranie','Odpowiedzieć na pytanie','Poczekać minutę'], ok:1,
-    note:'Po sześciu próbach sam się poddawał. Zawsze się poddaję szybciej, niż zapowiadam.' },
+  { q:'Co kupiliśmy w 2024 roku w drodze na Słowację?',
+    a:['Dmuchanego flaminga','Strój Sticha','Gipsowego krasnala','Koc z wilkiem'], ok:1,
+    note:'Nie było tego w planie wyjazdu. To był chyba jego największy atut.' },
+  { q:'Skąd mam to zdjęcie?',
+    img:'foto1.jpg',
+    a:['Sam je zrobiłem','Wysłałaś mi je','Wziąłem je z Twojego Instagrama','Dostałem od Twojej koleżanki'], ok:1,
+    note:'Wysłałaś je sama. Trzymam do dziś — chyba wystarczająca recenzja.' },
+  { q:'Oceń mój outfit z 2024 roku.', type:'rate', min:7,
+    img:'foto2.jpg',
+    note:'Dziękujemy. Ocena została zapisana jako wiążąca. Odwołanie nie przysługuje.' },
 
-  { q:'Na którą noc jest bilet „Noc spadających gwiazd"?',
-    a:['Sylwester','13/14 grudnia','Pierwszy śnieg','Dowolną — jest bezterminowy'], ok:1,
-    note:'Geminidy. Jedyny bilet w skrzyneczce z terminem, bo tego dnia decyduje niebo, nie my.' },
+  { q:'Co jedliśmy na obiad w WestCamp w 2024 roku?',
+    a:['Pierogi ruskie','Żurek w chlebie','Schabowego z ziemniakami','Placki ziemniaczane'], ok:1,
+    note:'W chlebie. Połowa chleba została, bo zawsze zostaje.' },
+  { q:'Przerwa pierwsza', type:'game', game:'pary',
+    note:'Sześć par — same rzeczy, które gdzieś już dziś przewinęły się w pytaniach.' },
 
-  /* ——— TE UZUPEŁNIJ SAM ———
-     Wpisz treść, cztery odpowiedzi i numer poprawnej.
-     Dopóki "q" jest puste, pytanie się nie pokaże.               */
+  { q:'Które z naszych filmów wrzuciłem na YouTube?',
+    a:['Nasz film z urbexu','Nasz film z Xpenga','Nasz film z wyjazdu do Portugalii','Żadnego z powyższych'], ok:3,
+    note:'Żadnego. Trzy bardzo przekonujące opcje i ani jedna prawdziwa.' },
+  { q:'A tutaj — byliśmy już razem?',
+    img:'foto7.jpg',
+    a:['Tak, już wtedy','Nie, jeszcze nie'], ok:1,
+    note:'Jeszcze nie. Wyglądało już dokładnie tak jak teraz, tylko bez nazwy.' },
 
-  { q:'', a:['','','',''], ok:0, note:'' },   /* np. gdzie się pierwszy raz spotkaliście */
-  { q:'', a:['','','',''], ok:0, note:'' },   /* np. jaki był pierwszy wspólny film      */
-  { q:'', a:['','','',''], ok:0, note:'' },   /* np. co zamawia zawsze, gdy nie wie      */
-  { q:'', a:['','','',''], ok:0, note:'' },   /* np. która piosenka to „nasza"           */
-  { q:'', a:['','','',''], ok:0, note:'' },   /* np. czego się boi, a nie przyznaje      */
-  { q:'', a:['','','',''], ok:0, note:'' },   /* np. gdzie był pierwszy pocałunek        */
-  { q:'', a:['','','',''], ok:0, note:'' },   /* np. co powiedziałaś pierwszego dnia     */
+  { q:'Ile wyciskam hantlami na ławce płaskiej?',
+    a:['15 kg na rękę','20 kg na rękę','25 kg na rękę','30 kg na rękę'], ok:2,
+    note:'Dwadzieścia pięć. Na rękę, nie łącznie — i zawsze to podkreślam.' },
+  { q:'Jaki był pierwszy tatuaż, który mi zrobiłaś?',
+    a:['PASSION','CHAOS','Panda','Lis'], ok:1,
+    imgAfter:'foto3.jpg',
+    note:'CHAOS. Do dziś nie wiem, czy to był opis Ciebie, mnie, czy nas dwojga.' },
 
-].filter(x => x.q && x.q.trim() && x.a.filter(Boolean).length >= 2);
+  { q:'Jaką prędkość tu rozwinęłaś?',
+    img:'foto8.jpg',
+    a:['5 km/h','25 km/h','60 km/h','310 km/h'], ok:0,
+    note:'Pięć. Dokładnie tyle, ile przewidział producent — mina sugerowała trzysta dziesięć.' },
+
+  { q:'Co robiliśmy rano po pierwszej nocy w namiocie u Wiki?',
+    a:['Zrobiliśmy śniadanie na kuchence turystycznej',
+       'Oglądaliśmy stare filmy Vicii na YouTube',
+       'Poszliśmy od razu nad wodę',
+       'Spaliśmy do południa'], ok:1,
+    note:'Stare filmy Vicii. Dziwny start dnia, a jakoś nikt nie protestował.' },
+
+  { q:'Co robiliśmy najczęściej, spotykając się co dzień lub dwa na mieście?',
+    a:['Siedzieliśmy w kawiarniach',
+       'Spacerowaliśmy i chodziliśmy po galeriach',
+       'Jeździliśmy na rowerach',
+       'Chodziliśmy do kina'], ok:1,
+    note:'Spacery i galerie. Żadnego planu, a i tak zawsze było co robić.' },
+
+  { q:'Przerwa druga', type:'game', game:'serca',
+    note:'Dziesięć serc w niecałą minutę. Nieźle jak na kogoś, kto twierdzi, że ma słaby refleks.' },
+
+  { q:'Gdzie i kiedy zrobiono to zdjęcie?', type:'fields',
+    img:'foto4.jpg',
+    fields:[
+      {label:'Kraj',    ph:'np. Czechy',  must:['slowac','slovac','sloven']},
+      {label:'Miesiąc', ph:'np. czerwiec', must:['lip','07','7']},
+      {label:'Rok',     ph:'np. 2023',    must:['2024','24']}
+    ],
+    pokaz:'Słowacja · lipiec · 2024',
+    note:'Słowacja, lipiec 2024. Lis był większy ode mnie i chyba zdawał sobie z tego sprawę.' },
+
+  { q:'Gdzie zrobiono to zdjęcie?',
+    img:'foto9.jpg',
+    a:['Navagio, Grecja','Praia da Dona Ana, Portugalia','Elafonisi, Grecja','Praia da Marinha, Portugalia'], ok:1,
+    note:'Praia da Dona Ana. Dwie greckie i dwie portugalskie — sam kraj to było za mało.' },
+
+  { q:'Na ile metrów zeszliśmy pod wodę?',
+    img:'foto5.jpg',
+    a:['5 metrów','12 metrów','20 metrów','45 metrów'], ok:1,
+    note:'Dwanaście. Rekin był atrapą — wrażenie już nie.' },
+
+  { q:'Czy robiąc to zdjęcie byliśmy już w związku?',
+    img:'foto6.jpg',
+    a:['Tak, już wtedy','Nie, jeszcze nie'], ok:1,
+    note:'Jeszcze nie. Choć patrząc na to teraz, trudno byłoby się domyślić.' },
+
+  { q:'Przerwa trzecia', type:'game', game:'sekwencja',
+    note:'Cztery rundy z pamięci. Dowód, że jednak pamiętasz rzeczy po kolei.' },
+
+  { q:'Jaka jest moja ulubiona zupa?',
+    a:['Pomidorowa','Rosół','Ramen','Krem z dyni'], ok:2,
+    note:'Ramen. I nie, rosół to nie to samo, choć próbowałaś mnie o tym przekonać.' },
+
+  { q:'Jaka jest moja ulubiona temperatura w domu?',
+    a:['21 stopni','23 stopnie','26 stopni','28 stopni'], ok:2,
+    note:'Dwadzieścia sześć. I tak, wiem dokładnie, co o tym sądzisz.' },
+
+  { q:'Co kocham w Tobie najbardziej?', type:'multi',
+    a:['Charakter','Poczucie humoru','Inteligencję','Upór'], ok:[0,2],
+    note:'Charakter i inteligencję. Dwie rzeczy, nie jedna — i to nie był błąd formularza.' },
+
+  { q:'Nad czym teraz pracujemy w związku?',
+    a:['Nad cierpliwością',
+       'Nad wyrażaniem siebie i tego, co czujemy',
+       'Nad planowaniem wspólnych wyjazdów',
+       'Nad dzieleniem się obowiązkami'], ok:1,
+    note:'Nad mówieniem wprost, co się czuje. Najtrudniejsze z całej listy.' },
+
+  { q:'Jak ma nazywać się nasze zwierzę?',
+    a:['Bazyl','Gacuś','Fistaszek','Kluska'], ok:1,
+    note:'Gacuś. Imię gotowe od dawna — brakuje tylko zwierzęcia.' },
+
+  { q:'Jakiego przezwiska nie lubię?',
+    a:['Misiek','Grzybek','Kotek','Skarbie'], ok:1,
+    note:'Grzybek. Nie mam pojęcia, skąd się wziął — i wolałbym, żeby tam został.' },
+
+  { q:'Jakie jest moje marzenie? Jedno słowo.', type:'text',
+    ph:'jedno słowo',
+    must:[['wiktoria','viktoria','viciia','vicia','wika','wiki']],
+    pokaz:'Wiktoria',
+    hints:[
+      {po:3, tekst:'Coś, co ma związek z nami.'},
+      {po:6, tekst:'Coś, czego można dotknąć.'},
+      {po:9, tekst:'Siedzi teraz obok mnie.'}
+    ],
+    note:'Wiktoria. Jedno słowo, bez żadnego drugiego dna.' },
+
+].filter(x => x.q && x.q.trim() && (x.type==='rate' || x.type==='text' || x.type==='fields' || x.type==='multi' || x.type==='game' || (x.a && x.a.filter(Boolean).length >= 2)));
 
 /* ════════════════════════════════════════════════════════════════ */
 
@@ -163,7 +358,15 @@ function fitH(){
 fitH(); addEventListener('resize',fitH); addEventListener('orientationchange',()=>setTimeout(fitH,250));
 if(window.visualViewport) visualViewport.addEventListener('resize',fitH);
 
-let i=0, score=0, locked=false;
+const norm = t => (t||'').toString().toLowerCase()
+  .replace(/ą/g,'a').replace(/ć/g,'c').replace(/ę/g,'e').replace(/ł/g,'l')
+  .replace(/ń/g,'n').replace(/ó/g,'o').replace(/ś/g,'s').replace(/[żź]/g,'z')
+  .replace(/[^a-z0-9]+/g,' ').trim();
+
+const PUNKTOWANE = () => QUESTIONS.filter(q=>q.type!=='rate' && q.type!=='game').length;
+const esc = t => (t||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+let i=0, score=0, locked=false, odpowiedzi=[];
 const $=id=>document.getElementById(id);
 function scr(id){ document.querySelectorAll('.scr').forEach(s=>s.classList.remove('on'));
   $(id).classList.add('on'); fitH(); try{window.scrollTo({top:0,behavior:'instant'})}catch(e){window.scrollTo(0,0)} }
@@ -171,43 +374,283 @@ function scr(id){ document.querySelectorAll('.scr').forEach(s=>s.classList.remov
 function begin(){
   if(!QUESTIONS.length){ alert('Brak pytań — uzupełnij listę w pliku.'); return; }
   $('prog').innerHTML = QUESTIONS.map(()=>'<span class="dot"></span>').join('');
-  i=0; score=0; scr('q'); render();
+  i=0; score=0; odpowiedzi=[]; scr('q'); render();
+}
+
+function dalej(){
+  if(i<QUESTIONS.length-1){ i++; render(); } else finish();
+}
+function zapisz(wpis){ odpowiedzi.push(wpis); setTimeout(dalej,430); }
+
+let graRaf=null, graTimer=[];
+function stopGra(){
+  if(graRaf){ cancelAnimationFrame(graRaf); graRaf=null; }
+  graTimer.forEach(t=>clearTimeout(t)); graTimer=[];
 }
 function render(){
+  stopGra();
   locked=false;
   const Q=QUESTIONS[i];
   [...$('prog').children].forEach((d,n)=>{ d.className='dot'+(n<i?' done':n===i?' now':''); });
   $('qnum').textContent='Pytanie '+(i+1)+' z '+QUESTIONS.length;
   $('qtext').textContent=Q.q;
-  $('note').className='note'; $('note').textContent=Q.note||'';
-  $('nx').className='go nx';
-  $('nx').textContent = (i===QUESTIONS.length-1) ? 'Pokaż wynik' : 'Dalej';
+  $('hint').textContent='';
+  if(Q.img){ $('qimg').src=Q.img; $('imgwrap').classList.add('on'); }
+  else { $('imgwrap').classList.remove('on'); $('qimg').removeAttribute('src'); }
   $('opts').innerHTML='';
-  Q.a.filter(Boolean).forEach((txt,n)=>{
+
+  if(Q.type==='game'){
+    const w=document.createElement('div'); w.className='gwrap';
+    $('opts').appendChild(w);
+    if(Q.game==='pary')     graPary(w, Q);
+    if(Q.game==='serca')    graSerca(w, Q);
+    if(Q.game==='sekwencja')graSekwencja(w, Q);
+    return;
+  }
+
+  if(Q.type==='fields'){
+    const box=document.createElement('div'); box.className='txtq';
+    const fl=document.createElement('div'); fl.className='fields';
+    Q.fields.forEach((f,n)=>{
+      const d=document.createElement('div'); d.className='field';
+      d.innerHTML='<label>'+f.label+'</label><input type="text" id="f'+n+'" autocomplete="off" '+
+        'autocorrect="off" spellcheck="false" placeholder="'+(f.ph||'')+'">';
+      fl.appendChild(d);
+    });
+    box.appendChild(fl);
+    const b=document.createElement('button'); b.className='go'; b.id='fb'; b.textContent='Zatwierdź';
+    box.appendChild(b);
+    $('opts').appendChild(box);
+    b.onclick=()=>{
+      if(locked) return;
+      const vals=Q.fields.map((f,n)=>$('f'+n).value.trim());
+      if(vals.every(v=>!v)){ $('hint').textContent='Wypełnij pola.'; fitH(); return; }
+      locked=true;
+      const ok=Q.fields.every((f,n)=>f.must.some(a=>norm(vals[n]).includes(norm(a))));
+      if(ok) score++;
+      Q.fields.forEach((f,n)=>$('f'+n).disabled=true); b.disabled=true;
+      zapisz({q:Q.q, mine:vals.filter(Boolean).join(' · ')||'—', correct:Q.pokaz, ok, note:Q.note, img:Q.imgAfter});
+    };
+    return;
+  }
+
+  if(Q.type==='text'){
+    const box=document.createElement('div'); box.className='txtq';
+    box.innerHTML='<input type="text" id="ti" autocomplete="off" autocorrect="off" '+
+      'autocapitalize="off" spellcheck="false" placeholder="'+(Q.ph||'wpisz odpowiedź')+'">';
+    const b=document.createElement('button'); b.className='go'; b.textContent='Zatwierdź';
+    box.appendChild(b);
+    $('opts').appendChild(box);
+    const ti=$('ti');
+    let proby=0;
+    b.onclick=()=>{
+      if(locked) return;
+      const v=norm(ti.value);
+      if(!v){ $('hint').className='hintline'; $('hint').textContent='Wpisz odpowiedź.'; fitH(); return; }
+      if(Q.must.every(g=>g.some(alt=>v.includes(norm(alt))))){
+        locked=true; ti.disabled=true; b.disabled=true; score++;
+        ti.classList.add('dobre'); $('hint').textContent=''; $('hint').className='hintline';
+        zapisz({q:Q.q, mine:ti.value.trim(), correct:Q.pokaz, ok:true, note:Q.note, img:Q.imgAfter});
+        return;
+      }
+      proby++;
+      ti.classList.add('zle');
+      graTimer.push(setTimeout(()=>ti.classList.remove('zle'),460));
+      const odkryte=(Q.hints||[]).filter(h=>proby>=h.po);
+      if(odkryte.length){
+        $('hint').className='hintline pod';
+        $('hint').innerHTML='<b>Podpowiedź</b>'+
+          odkryte.map(h=>'<div>'+h.tekst+'</div>').join('');
+      } else {
+        $('hint').className='hintline';
+        $('hint').textContent='Nie to słowo.';
+      }
+      fitH();
+    };
+    ti.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); b.click(); } });
+    return;
+  }
+
+  if(Q.type==='rate'){
+    const box=document.createElement('div'); box.className='rate';
+    box.innerHTML='<div class="rateval" id="rv">—</div>'+
+      '<input type="range" id="rs" min="0" max="10" step="1" value="5">'+
+      '<div class="scale"><span>0</span><span>10</span></div>';
+    const b=document.createElement('button'); b.className='go'; b.id='rb'; b.textContent='Zatwierdź ocenę';
+    box.appendChild(b);
+    $('opts').appendChild(box);
+    const rs=$('rs'), rv=$('rv'); let ruszony=false;
+    rs.oninput=()=>{ ruszony=true; rv.textContent=rs.value; };
+    b.onclick=()=>{
+      if(locked) return;
+      if(!ruszony){ $('hint').textContent='Najpierw przesuń suwak.'; fitH(); return; }
+      const v=+rs.value;
+      if(v < (Q.min||7)){
+        $('hint').textContent='Błąd walidacji: ocena poniżej '+(Q.min||7)+' nie została przewidziana w tym formularzu.';
+        fitH(); return;
+      }
+      locked=true; rs.disabled=true; b.disabled=true; $('hint').textContent='';
+      zapisz({q:Q.q, mine:v+'/10', correct:null, ok:null, note:Q.note, img:Q.imgAfter});
+    };
+    return;
+  }
+
+  if(Q.type==='multi'){
+    const opcje=Q.a.filter(Boolean);
+    const wybrane=new Set();
+    opcje.forEach((txt,n)=>{
+      const b=document.createElement('button'); b.className='opt'; b.textContent=txt;
+      b.onclick=()=>{
+        if(locked) return;
+        if(wybrane.has(n)){ wybrane.delete(n); b.classList.remove('wybrane'); }
+        else { wybrane.add(n); b.classList.add('wybrane'); }
+        $('hint').textContent='';
+      };
+      $('opts').appendChild(b);
+    });
+    const z=document.createElement('button'); z.className='go'; z.style.marginTop='10px';
+    z.textContent='Zatwierdź'; $('opts').appendChild(z);
+    z.onclick=()=>{
+      if(locked) return;
+      if(!wybrane.size){ $('hint').textContent='Zaznacz odpowiedź.'; fitH(); return; }
+      locked=true;
+      [...$('opts').querySelectorAll('.opt')].forEach(b=>b.onclick=null); z.disabled=true;
+      const mine=[...wybrane].sort((a,b)=>a-b), good=[...Q.ok].sort((a,b)=>a-b);
+      const ok = mine.length===good.length && mine.every((v,k)=>v===good[k]);
+      if(ok) score++;
+      zapisz({q:Q.q, mine:mine.map(k=>opcje[k]).join(' + '), correct:good.map(k=>opcje[k]).join(' + '),
+              ok, note:Q.note, img:Q.imgAfter, opts:opcje, mineIdxs:mine, okIdxs:good});
+    };
+    return;
+  }
+
+  const opcje=Q.a.filter(Boolean);
+  opcje.forEach((txt,n)=>{
     const b=document.createElement('button'); b.className='opt'; b.textContent=txt;
-    b.onclick=()=>answer(n,b); $('opts').appendChild(b);
+    b.onclick=()=>{
+      if(locked) return; locked=true;
+      [...$('opts').children].forEach((x,k)=>{ x.classList.toggle('wybrane',k===n); x.onclick=null; });
+      const ok=(n===Q.ok); if(ok) score++;
+      zapisz({q:Q.q, mine:txt, correct:opcje[Q.ok], ok, note:Q.note, img:Q.imgAfter, opts:opcje, mineIdxs:[n], okIdxs:[Q.ok]});
+    };
+    $('opts').appendChild(b);
   });
 }
-function answer(n,btn){
+
+function koniecGry(Q){
   if(locked) return; locked=true;
-  const Q=QUESTIONS[i], good=(n===Q.ok);
-  if(good) score++;
-  [...$('opts').children].forEach((b,k)=>{
-    if(k===Q.ok) b.classList.add('ok');
-    else if(k===n) b.classList.add('bad');
-    else b.classList.add('dim');
-    b.onclick=null;
+  stopGra();
+  graTimer.push(setTimeout(()=>{ odpowiedzi.push({q:Q.q, mine:'zaliczone', correct:null, ok:null,
+    note:Q.note, gra:true}); dalej(); }, 650));
+}
+
+/* GRA 1 — dopasuj pary */
+function graPary(w,Q){
+  const ikony=['🦊','🦈','🍜','⛺','🏎️','🏖️'];
+  const talia=[...ikony,...ikony].sort(()=>Math.random()-0.5);
+  w.innerHTML='<div class="gtxt">Znajdź wszystkie sześć par. Stukaj w kafelki.</div>'+
+    '<div class="pary" id="pary"></div><div class="gstat" id="pstat">0 z 6</div>';
+  const pole=w.querySelector('#pary'), stat=w.querySelector('#pstat');
+  let odkryte=[], znalezione=0, blok=false;
+  talia.forEach((ik,n)=>{
+    const k=document.createElement('div'); k.className='kar';
+    k.innerHTML='<span class="ikona">'+ik+'</span>'; k.dataset.ik=ik;
+    k.addEventListener('pointerdown',ev=>{
+      ev.preventDefault();
+      if(blok||k.classList.contains('odkryta')||k.classList.contains('zdjeta')) return;
+      k.classList.add('odkryta'); odkryte.push(k);
+      if(odkryte.length===2){
+        blok=true;
+        const [a,b]=odkryte;
+        if(a.dataset.ik===b.dataset.ik){
+          graTimer.push(setTimeout(()=>{
+            a.classList.add('zdjeta'); b.classList.add('zdjeta');
+            odkryte=[]; blok=false; znalezione++; stat.textContent=znalezione+' z 6';
+            if(znalezione===6) koniecGry(Q);
+          },260));
+        } else {
+          graTimer.push(setTimeout(()=>{
+            a.classList.remove('odkryta'); b.classList.remove('odkryta');
+            odkryte=[]; blok=false;
+          },620));
+        }
+      }
+    });
+    pole.appendChild(k);
   });
-  if(Q.note){ $('note').textContent=Q.note; $('note').classList.add('on'); }
-  $('nx').classList.add('on');
-  fitH();
 }
-function nextQ(){
-  if(i<QUESTIONS.length-1){ i++; render(); }
-  else finish();
+
+/* GRA 2 — lap serduszka */
+function graSerca(w,Q){
+  w.innerHTML='<div class="gtxt">Złap dziesięć serc. Pojawiają się na moment.</div>'+
+    '<div class="arena" id="arena"></div><div class="gstat" id="sstat">0 z 10</div>';
+  const a=w.querySelector('#arena'), stat=w.querySelector('#sstat');
+  let zlapane=0;
+  function dodaj(){
+    if(locked) return;
+    const el=document.createElement('div'); el.className='serce'; el.textContent='❤️';
+    const m=34;
+    el.style.left=(m+Math.random()*(a.clientWidth-m*2))+'px';
+    el.style.top=(m+Math.random()*(a.clientHeight-m*2))+'px';
+    el.addEventListener('pointerdown',ev=>{
+      ev.preventDefault(); if(locked||!el.isConnected) return;
+      el.remove(); zlapane++; stat.textContent=zlapane+' z 10';
+      if(zlapane>=10) koniecGry(Q);
+    });
+    a.appendChild(el);
+    graTimer.push(setTimeout(()=>el.remove(),1250));
+    graTimer.push(setTimeout(dodaj, 430+Math.random()*320));
+  }
+  graTimer.push(setTimeout(dodaj,350));
 }
+
+/* GRA 3 — powtorz sekwencje */
+function graSekwencja(w,Q){
+  w.innerHTML='<div class="gtxt">Zapamiętaj kolejność i powtórz ją. Cztery rundy.</div>'+
+    '<div class="pady" id="pady"></div><div class="gstat" id="qstat">Runda 1 z 4</div>';
+  const pole=w.querySelector('#pady'), stat=w.querySelector('#qstat');
+  const pady=[];
+  for(let n=0;n<4;n++){
+    const d=document.createElement('div'); d.className='pad p'+n;
+    d.addEventListener('pointerdown',ev=>{ ev.preventDefault(); klik(n); });
+    pole.appendChild(d); pady.push(d);
+  }
+  let seq=[], krok=0, runda=0, czekaj=true;
+  function blysk(n,ms){
+    pady[n].classList.add('swieci');
+    graTimer.push(setTimeout(()=>pady[n].classList.remove('swieci'),ms));
+  }
+  function nowaRunda(){
+    runda++; stat.textContent='Runda '+runda+' z 4';
+    seq.push(Math.floor(Math.random()*4)); krok=0; czekaj=true;
+    seq.forEach((n,k)=>graTimer.push(setTimeout(()=>blysk(n,330), 520+k*620)));
+    graTimer.push(setTimeout(()=>{czekaj=false;}, 520+seq.length*620));
+  }
+  function klik(n){
+    if(locked||czekaj) return;
+    blysk(n,180);
+    if(seq[krok]===n){
+      krok++;
+      if(krok===seq.length){
+        czekaj=true;
+        if(runda>=4){ koniecGry(Q); return; }
+        graTimer.push(setTimeout(nowaRunda,620));
+      }
+    } else {
+      czekaj=true; stat.textContent='Pomyłka — jeszcze raz tę rundę';
+      krok=0;
+      graTimer.push(setTimeout(()=>{
+        stat.textContent='Runda '+runda+' z 4';
+        seq.forEach((m,k)=>graTimer.push(setTimeout(()=>blysk(m,330), 420+k*620)));
+        graTimer.push(setTimeout(()=>{czekaj=false;}, 420+seq.length*620));
+      },900));
+    }
+  }
+  graTimer.push(setTimeout(nowaRunda,400));
+}
+
 function finish(){
-  const n=QUESTIONS.length, p=Math.round(score/n*100);
+  const n=PUNKTOWANE(), p=n?Math.round(score/n*100):100;
   $('score').textContent=score+'/'+n;
   $('pct').textContent=p+'% trafień';
   let v;
@@ -216,6 +659,36 @@ function finish(){
   else if(p>=50) v='Średnio — ale i tak zostajesz, bo bilety są bezterminowe.';
   else v='Słabo. Na szczęście ten egzamin nie był obowiązkowy ani punktowany.';
   $('verdict').textContent=v;
+  $('review').innerHTML = odpowiedzi.filter(a=>!a.gra).map((a,idx)=>{
+    const kl  = a.ok===null ? ' neu' : (a.ok ? ' good' : ' bad');
+    const mk  = a.ok===null ? '●' : (a.ok ? '✓' : '✕');
+    let body='';
+    if(a.opts && a.opts.length){
+      body = a.opts.map((o,k)=>{
+        let c='ro', tg='';
+        const jestOk=(a.okIdxs||[]).includes(k), jestJej=(a.mineIdxs||[]).includes(k);
+        if(jestOk && jestJej){ c+=' corr'; tg='Twoja · poprawna'; }
+        else if(jestOk){ c+=' corr'; tg='poprawna'; }
+        else if(jestJej){ c+=' wrong'; tg='Twoja'; }
+        return '<div class="'+c+'">'+esc(o)+(tg?'<span class="tg">'+tg+'</span>':'')+'</div>';
+      }).join('');
+    } else {
+      body = '<div class="ro'+(a.ok===false?' wrong':(a.ok?' corr':''))+'">'+esc(a.mine)+
+             '<span class="tg">Twoja</span></div>';
+      if(a.correct && a.ok===false)
+        body += '<div class="ro corr">'+esc(a.correct)+'<span class="tg">poprawna</span></div>';
+    }
+    if(a.note) body += '<div class="rn">'+esc(a.note)+'</div>';
+    if(a.img)  body += '<img class="rimg" src="'+a.img+'" alt="">';
+    return '<div class="rev'+kl+'" data-n="'+idx+'">'+
+      '<div class="revhead"><span class="mk">'+mk+'</span>'+
+      '<span class="tt">'+esc(a.q)+'</span><span class="ch">›</span></div>'+
+      '<div class="revbody">'+body+'</div></div>';
+  }).join('');
+  $('review').onclick = e => {
+    const h = e.target.closest('.revhead'); if(!h) return;
+    h.parentNode.classList.toggle('open'); fitH();
+  };
   scr('end');
 }
 </script>
