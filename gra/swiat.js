@@ -96,15 +96,18 @@ export class Swiat {
     const odStartu = lab.odleglosci(sx, sy);
 
     // Fenek: daleko od startu i nie tuż przy drzwiach, żeby droga powrotna
-    // też była kawałkiem gry, a nie dwoma krokami
-    let najlepsze = null, najlepszyWynik = -1;
+    // też była kawałkiem gry. Losujemy spośród kilku najlepszych miejsc,
+    // żeby kolejne podejście nie było przepisaniem poprzedniego.
+    const kandydaci = [];
     for (let y = 0; y < lab.h; y++) for (let x = 0; x < lab.w; x++) {
       const i = y * lab.w + x;
       if (odStartu[i] < 10 || doWyjscia[i] < 8) continue;
-      const wynik = Math.min(odStartu[i], doWyjscia[i]);
-      if (wynik > najlepszyWynik) { najlepszyWynik = wynik; najlepsze = [x, y]; }
+      kandydaci.push({ x, y, wynik: Math.min(odStartu[i], doWyjscia[i]) });
     }
-    const [fx, fy] = najlepsze || [lab.w - 2, lab.h - 2];
+    kandydaci.sort((a, b) => b.wynik - a.wynik);
+    const pula = kandydaci.slice(0, Math.max(1, Math.min(8, kandydaci.length)));
+    const wybor = pula.length ? pula[Math.floor(Math.random() * pula.length)] : null;
+    const [fx, fy] = wybor ? [wybor.x, wybor.y] : [lab.w - 2, lab.h - 2];
 
     this.fenek = new Postac(gra.scena, this.sprite.fenek, { wysokosc: 1.8, nazwa: 'Fenek' });
     this.fenek.ustaw(fx * CELL + CELL / 2, fy * CELL + CELL / 2);

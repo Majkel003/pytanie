@@ -126,7 +126,7 @@ export class Gra {
     this.grupa = new THREE.Group();
     this.scena.add(this.grupa);
 
-    const { rozplot = 0.35, komnaty = 6 } = opcje;
+    const { rozplot = 0.5, komnaty = 6 } = opcje;
     this.lab = new Labirynt(szer, wys, ziarno);
     this.lab.rozplec(rozplot);          // pętle: więcej niż jedna droga
     this.lab.wykujKomnaty(komnaty, 3);  // otwarte sale, żeby nie była to sama krata
