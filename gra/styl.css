@@ -175,3 +175,95 @@ html, body {
 
 /* trzęsienie ekranu przy złapaniu */
 body.potrzasniety #plotno { animation: drzenie .42s ease; }
+
+/* ─────────────────── przyciski przy mapce ─────────────────── */
+#mapkaRamka { cursor: pointer; pointer-events: auto; transition: border-color .2s ease; }
+#mapkaRamka:active { border-color: rgba(201,162,74,.72); }
+
+#przyciskiHud {
+  position: fixed; right: 12px; top: 128px; z-index: 21;
+  display: flex; flex-direction: column; gap: 8px;
+  animation: wjazdZGory .6s .42s ease both;
+}
+.ikona {
+  width: 44px; height: 44px; padding: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(8,8,12,.66);
+  border: 1px solid rgba(201,162,74,.28);
+  border-radius: 3px; cursor: pointer;
+  touch-action: manipulation; position: relative;
+}
+.ikona:active { background: rgba(201,162,74,.2); }
+.ikona svg { width: 21px; height: 21px; fill: none; stroke: var(--zloto); stroke-width: 1.6;
+             stroke-linecap: round; stroke-linejoin: round; }
+.ikona.wyciszony svg { stroke: #6a6356; }
+.ikona .licznik {
+  position: absolute; right: -4px; top: -4px;
+  min-width: 17px; height: 17px; padding: 0 4px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; line-height: 1; color: #0d0c10;
+  background: var(--zloto); border-radius: 9px;
+}
+.ikona .licznik:empty, .ikona .licznik[data-puste="1"] { display: none; }
+
+/* ─────────────────── panel wysuwany od dołu ─────────────────── */
+#panel {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 38;
+  max-height: 86%; display: flex; flex-direction: column;
+  background: linear-gradient(180deg, #16141d 0%, #0d0c12 100%);
+  border-top: 1px solid rgba(201,162,74,.34);
+  border-radius: 10px 10px 0 0;
+  transform: translateY(102%);
+  transition: transform .34s cubic-bezier(.22,.9,.3,1);
+  padding: 16px 18px calc(20px + env(safe-area-inset-bottom));
+}
+#panel.otwarty { transform: none; }
+#panelCien {
+  position: fixed; inset: 0; z-index: 37;
+  background: rgba(5,5,8,.62);
+  opacity: 0; pointer-events: none; transition: opacity .3s ease;
+}
+#panelCien.otwarty { opacity: 1; pointer-events: auto; }
+
+#panel .uchwyt {
+  width: 42px; height: 3px; border-radius: 2px; margin: 0 auto 14px;
+  background: rgba(201,162,74,.38);
+}
+#panel .naglowek {
+  display: flex; align-items: baseline; justify-content: space-between;
+  margin-bottom: 14px;
+}
+#panel .naglowek h2 {
+  font-family: 'EB Garamond', serif; font-weight: 600; font-size: 21px;
+  color: #f2ead8;
+}
+#panel .naglowek .zamknij {
+  font-size: 10px; letter-spacing: .22em; text-transform: uppercase;
+  color: var(--zloto); background: none; border: 0; cursor: pointer;
+  padding: 6px 2px; touch-action: manipulation;
+}
+#panel .zawartosc { overflow-y: auto; -webkit-overflow-scrolling: touch; }
+
+/* duża mapa */
+#duzaMapa { display: block; width: 100%; max-width: 420px; margin: 0 auto;
+            image-rendering: auto; }
+
+/* ekwipunek */
+.siatkaEkw { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.przedmiot {
+  aspect-ratio: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 6px; padding: 8px;
+  background: rgba(201,162,74,.07);
+  border: 1px solid rgba(201,162,74,.26); border-radius: 3px;
+  animation: wejscie .35s ease both;
+}
+.przedmiot .znak { font-size: 24px; line-height: 1; }
+.przedmiot .nazwa {
+  font-size: 9px; letter-spacing: .14em; text-transform: uppercase;
+  color: #b4ac9c; text-align: center; line-height: 1.4;
+}
+.przedmiot.pusty { background: none; border-style: dashed; border-color: rgba(201,162,74,.14); }
+.pustka {
+  font-family: 'EB Garamond', serif; font-style: italic;
+  color: #7d7568; text-align: center; padding: 18px 0 8px; font-size: 15px;
+}

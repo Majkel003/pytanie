@@ -108,19 +108,92 @@ export class Labirynt {
     return naj;
   }
 
-  /* Lista ścian jako prostokąty w płaszczyźnie XZ: budulec geometrii i kolizji. */
-  sciany(cell, grubosc) {
+  /* Lista ścian jako prostokąty w płaszczyźnie XZ: budulec geometrii i kolizji.
+     `pomin` wyjmuje pojedyncze segmenty, w których ma stanąć przejście. */
+  sciany(cell, grubosc, pomin = []) {
     const t = grubosc / 2, out = [];
+    const klucz = (x, y, k) => x + ':' + y + ':' + k;
+    const pominiete = new Set(pomin.map(p => klucz(p.x, p.y, p.kier)));
     const dodaj = (x0, z0, x1, z1) => out.push({ x0, z0, x1, z1 });
     for (let y = 0; y < this.h; y++) {
       for (let x = 0; x < this.w; x++) {
         const X = x * cell, Z = y * cell;
-        if (this.ma(x, y, N)) dodaj(X - t, Z - t, X + cell + t, Z + t);
-        if (this.ma(x, y, W)) dodaj(X - t, Z - t, X + t, Z + cell + t);
-        if (y === this.h - 1 && this.ma(x, y, S)) dodaj(X - t, Z + cell - t, X + cell + t, Z + cell + t);
-        if (x === this.w - 1 && this.ma(x, y, E)) dodaj(X + cell - t, Z - t, X + cell + t, Z + cell + t);
+        if (this.ma(x, y, N) && !pominiete.has(klucz(x, y, N))) dodaj(X - t, Z - t, X + cell + t, Z + t);
+        if (this.ma(x, y, W) && !pominiete.has(klucz(x, y, W))) dodaj(X - t, Z - t, X + t, Z + cell + t);
+        if (y === this.h - 1 && this.ma(x, y, S) && !pominiete.has(klucz(x, y, S)))
+          dodaj(X - t, Z + cell - t, X + cell + t, Z + cell + t);
+        if (x === this.w - 1 && this.ma(x, y, E) && !pominiete.has(klucz(x, y, E)))
+          dodaj(X + cell - t, Z - t, X + cell + t, Z + cell + t);
       }
     }
     return out;
+  }
+
+  /* Otwarte komnaty: wybite bloki bez ścian wewnętrznych. Bez nich całość
+     jest równą siatką jednokomórkowych korytarzy i czyta się jak krata,
+     a nie jak budynek z salami i zaułkami. */
+  wykujKomnaty(ile = 4, maxBok = 3) {
+    const komnaty = [];
+    for (let proba = 0, zrobione = 0; proba < ile * 14 && zrobione < ile; proba++) {
+      const kw = 2 + Math.floor(this.rnd() * (maxBok - 1));
+      const kh = 2 + Math.floor(this.rnd() * (maxBok - 1));
+      const x0 = 1 + Math.floor(this.rnd() * (this.w - kw - 2));
+      const y0 = 1 + Math.floor(this.rnd() * (this.h - kh - 2));
+      // komnaty nie mogą na siebie nachodzić ani się stykać
+      if (komnaty.some(k => x0 < k.x1 + 1 && x0 + kw > k.x0 - 1 &&
+                            y0 < k.y1 + 1 && y0 + kh > k.y0 - 1)) continue;
+      for (let y = y0; y < y0 + kh; y++) {
+        for (let x = x0; x < x0 + kw; x++) {
+          if (x < x0 + kw - 1) this.usun(x, y, E);
+          if (y < y0 + kh - 1) this.usun(x, y, S);
+        }
+      }
+      komnaty.push({ x0, y0, x1: x0 + kw - 1, y1: y0 + kh - 1 });
+      zrobione++;
+    }
+    this.komnaty = komnaty;
+    return komnaty;
+  }
+
+  /* Ile pól jest ślepych uliczkami (do kontroli, czy zaułki w ogóle zostały). */
+  ileSlepych() {
+    let n = 0;
+    for (let y = 0; y < this.h; y++) for (let x = 0; x < this.w; x++) {
+      const c = this.kom[this.idx(x, y)];
+      if ([N, E, S, W].filter(k => c & k).length === 3) n++;
+    }
+    return n;
+  }
+
+  /* Ile par sąsiadów ma przejście (miara gęstości połączeń). */
+  ilePrzejsc() {
+    let n = 0;
+    for (let y = 0; y < this.h; y++) for (let x = 0; x < this.w; x++) {
+      if (!this.ma(x, y, E) && x < this.w - 1) n++;
+      if (!this.ma(x, y, S) && y < this.h - 1) n++;
+    }
+    return n;
+  }
+
+  /* Najdalsze od startu pole, które ma ścianę na zewnętrznym murze:
+     tam stawiamy wyjście, żeby droga do niego była najdłuższa z możliwych. */
+  najdalszeNaObrzezu(sx = 0, sy = 0) {
+    const d = this.odleglosci(sx, sy);
+    let naj = null, najd = -1;
+    for (let y = 0; y < this.h; y++) {
+      for (let x = 0; x < this.w; x++) {
+        const dist = d[this.idx(x, y)];
+        if (dist <= najd) continue;
+        const strony = [];
+        if (y === 0)          strony.push(N);
+        if (y === this.h - 1) strony.push(S);
+        if (x === 0)          strony.push(W);
+        if (x === this.w - 1) strony.push(E);
+        if (!strony.length) continue;
+        najd = dist;
+        naj = { x, y, kier: strony[0], dystans: dist };
+      }
+    }
+    return naj;
   }
 }

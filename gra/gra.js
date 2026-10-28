@@ -104,6 +104,10 @@ export class Gra {
     this.dziala = false;
     this.naTik = null;                          // podpinana logika gry
     this.mapka  = null;
+    this.dzwiek = null;                         // ustawiane z zewnątrz
+    this.ekwipunek = [];                        // zebrane przedmioty
+    this.fazaKroku = 0;
+    this.ostatniStuk = 0;
 
     this.#wejscie();
     addEventListener('resize', () => this.rozmiar());
@@ -111,7 +115,7 @@ export class Gra {
   }
 
   /* ─────────── budowa piętra ─────────── */
-  zbuduj(szer, wys, ziarno) {
+  zbuduj(szer, wys, ziarno, opcje = {}) {
     if (this.grupa) {
       this.scena.remove(this.grupa);
       this.grupa.traverse(o => {
@@ -122,13 +126,20 @@ export class Gra {
     this.grupa = new THREE.Group();
     this.scena.add(this.grupa);
 
+    const { rozplot = 0.35, komnaty = 6 } = opcje;
     this.lab = new Labirynt(szer, wys, ziarno);
-    this.lab.rozplec(0.42);
+    this.lab.rozplec(rozplot);          // pętle: więcej niż jedna droga
+    this.lab.wykujKomnaty(komnaty, 3);  // otwarte sale, żeby nie była to sama krata
     this.odwiedzone = new Uint8Array(szer * wys);
 
-    const sciany = this.lab.sciany(CELL, GRUBOSC);
-    this.#geometriaScian(sciany);
-    this.#kubelkiKolizji(sciany);
+    this.wyjscie = this.lab.najdalszeNaObrzezu(0, 0);
+    this.wyjscieOtwarte = false;
+
+    const sciany = this.lab.sciany(CELL, GRUBOSC, [this.wyjscie]);
+    const bryly = this.#zbudujWyjscie(this.wyjscie);
+    this.#geometriaScian(sciany.concat(bryly.mur));
+    this.#kubelkiKolizji(sciany.concat(bryly.mur, bryly.blokada));
+    this.blokadaWyjscia = bryly.blokada;
     this.#podlogaISufit(szer, wys);
 
     this.pozycja.set(CELL / 2, WZROST, CELL / 2);
@@ -183,7 +194,104 @@ export class Gra {
     geo.setIndex(new THREE.BufferAttribute(ind, 1));
     geo.computeBoundingSphere();
 
-    this.grupa.add(new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ map: teksturaSciany() })));
+    this.siatkaScian = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ map: teksturaSciany() }));
+    this.grupa.add(this.siatkaScian);
+  }
+
+  /* Drzwi: otwór w murze zewnętrznym, zamknięty płytą do czasu odblokowania.
+     Zwraca bryły muru (boki) i prostokąt blokujący przejście.             */
+  #zbudujWyjscie(w) {
+    const t = GRUBOSC / 2, SZER_OTW = 2.6, WYS_OTW = 2.75;
+    const X = w.x * CELL, Z = w.y * CELL;
+    const pion = (w.kier === N || w.kier === S);
+
+    // pas muru, w którym robimy dziurę
+    let x0, z0, x1, z1;
+    if (w.kier === N)      { x0 = X - t;        z0 = Z - t;            x1 = X + CELL + t; z1 = Z + t; }
+    else if (w.kier === S) { x0 = X - t;        z0 = Z + CELL - t;     x1 = X + CELL + t; z1 = Z + CELL + t; }
+    else if (w.kier === W) { x0 = X - t;        z0 = Z - t;            x1 = X + t;        z1 = Z + CELL + t; }
+    else                   { x0 = X + CELL - t; z0 = Z - t;            x1 = X + CELL + t; z1 = Z + CELL + t; }
+
+    const srodek = pion ? (x0 + x1) / 2 : (z0 + z1) / 2;
+    const a = srodek - SZER_OTW / 2, b = srodek + SZER_OTW / 2;
+
+    const mur = pion
+      ? [{ x0, z0, x1: a, z1 }, { x0: b, z0, x1, z1 }]
+      : [{ x0, z0, x1, z1: a }, { x0, z0: b, x1, z1 }];
+
+    const otwor = pion ? { x0: a, z0, x1: b, z1 } : { x0, z0: a, x1, z1: b };
+
+    // nadproże nad otworem (nie bierze udziału w kolizji)
+    const geoN = new THREE.BoxGeometry(otwor.x1 - otwor.x0, WYSOKOSC - WYS_OTW, otwor.z1 - otwor.z0);
+    const nadproze = new THREE.Mesh(geoN, new THREE.MeshLambertMaterial({ color: 0x7a6a4c }));
+    nadproze.position.set((otwor.x0 + otwor.x1) / 2, (WYSOKOSC + WYS_OTW) / 2, (otwor.z0 + otwor.z1) / 2);
+    this.grupa.add(nadproze);
+
+    // framuga: dwa jaśniejsze słupki, żeby drzwi rzucały się w oczy z daleka
+    const matOscieznica = new THREE.MeshLambertMaterial({ color: 0x8d7a56 });
+    for (const bok of mur) {
+      const sx = pion ? 0.22 : bok.x1 - bok.x0;
+      const sz = pion ? bok.z1 - bok.z0 : 0.22;
+      const px = pion ? (bok.x1 === a ? a - 0.11 : b + 0.11) : (bok.x0 + bok.x1) / 2;
+      const pz = pion ? (bok.z0 + bok.z1) / 2 : (bok.z1 === a ? a - 0.11 : b + 0.11);
+      const sl = new THREE.Mesh(new THREE.BoxGeometry(sx, WYS_OTW, sz), matOscieznica);
+      sl.position.set(px, WYS_OTW / 2, pz);
+      this.grupa.add(sl);
+    }
+
+    // świetlisty prostokąt w otworze: zamknięty jest chłodny, otwarty ciepły
+    const szerPl = pion ? SZER_OTW : (otwor.z1 - otwor.z0);
+    this.plytaWyjscia = new THREE.Mesh(
+      new THREE.PlaneGeometry(szerPl, WYS_OTW),
+      new THREE.MeshBasicMaterial({ color: 0x2b4a6b, transparent: true, opacity: 0.88,
+                                    side: THREE.DoubleSide, fog: true })
+    );
+    this.plytaWyjscia.position.set((otwor.x0 + otwor.x1) / 2, WYS_OTW / 2, (otwor.z0 + otwor.z1) / 2);
+    if (!pion) this.plytaWyjscia.rotation.y = Math.PI / 2;
+    this.grupa.add(this.plytaWyjscia);
+
+    this.swiatloWyjscia = new THREE.PointLight(0x5b8fc9, 7, 15, 1.4);
+    this.swiatloWyjscia.position.set(
+      (otwor.x0 + otwor.x1) / 2 + (w.kier === N ? 0 : w.kier === S ? 0 : (w.kier === W ? 1 : -1)),
+      WYS_OTW * 0.6,
+      (otwor.z0 + otwor.z1) / 2 + (w.kier === N ? 1 : w.kier === S ? -1 : 0)
+    );
+    this.grupa.add(this.swiatloWyjscia);
+
+    // punkt, do którego trzeba podejść, i kierunek wyjścia na zewnątrz
+    this.punktWyjscia = new THREE.Vector3(
+      X + CELL / 2 + (w.kier === W ? -0.6 : w.kier === E ? 0.6 : 0),
+      WZROST,
+      Z + CELL / 2 + (w.kier === N ? -0.6 : w.kier === S ? 0.6 : 0)
+    );
+
+    return { mur, blokada: [otwor] };
+  }
+
+  /* Odblokowanie wyjścia: płyta robi się ciepła, przejście przestaje blokować. */
+  otworzWyjscie() {
+    if (this.wyjscieOtwarte) return;
+    this.wyjscieOtwarte = true;
+    for (const s of this.blokadaWyjscia) {
+      for (const [, lista] of this.kubelki) {
+        const i = lista.indexOf(s);
+        if (i >= 0) lista.splice(i, 1);
+      }
+    }
+    this.plytaWyjscia.material.color.set(0xfff4de);
+    this.plytaWyjscia.material.opacity = 0.93;
+    this.plytaWyjscia.material.blending = 2;
+    this.swiatloWyjscia.color.set(0xffd9a0);
+    this.swiatloWyjscia.intensity = 22;
+    this.swiatloWyjscia.distance = 24;
+    this.dzwiek?.otwarcie();
+  }
+
+  /* Czy gracz stoi w progu? */
+  przyWyjsciu(promien = 2.2) {
+    if (!this.punktWyjscia) return false;
+    return Math.hypot(this.pozycja.x - this.punktWyjscia.x,
+                      this.pozycja.z - this.punktWyjscia.z) < promien;
   }
 
   /* Ściany w kubełkach po komórkach: kolizja sprawdza tylko sąsiedztwo. */
@@ -369,9 +477,19 @@ export class Gra {
       const sin = Math.sin(this.obrot.y), cos = Math.cos(this.obrot.y);
       this.pozycja.x += (-sin * przod + cos * bok) * sk;
       this.pozycja.z += (-cos * przod - sin * bok) * sk;
-      this.rozsun(this.pozycja);
+      const otarcie = this.rozsun(this.pozycja);
       this.#oznaczOdwiedzone();
       this.bujanie += dt * 10.5 * Math.min(dlug, 1);
+
+      // stąpnięcie w dolnym punkcie kołysania, nie co stałą liczbę klatek
+      const faza = Math.floor(this.bujanie / Math.PI);
+      if (faza !== this.fazaKroku) { this.fazaKroku = faza; this.dzwiek?.krok(); }
+
+      // obicie o mur, ale nie przy samym ślizganiu się wzdłuż ściany
+      if (otarcie && dlug > 0.55 && this.czas - this.ostatniStuk > 0.45) {
+        this.ostatniStuk = this.czas;
+        this.dzwiek?.stuk();
+      }
     }
 
     // kołysanie głowy i mikro-przechył przy skręcie w bok
@@ -385,6 +503,7 @@ export class Gra {
     this.latarka.intensity = this.mocLatarki * migot;
     this.latarka.position.set(this.kamera.position.x, this.kamera.position.y + 0.12, this.kamera.position.z);
 
+    this.dzwiek?.tik(dt);
     this.naTik?.(dt);
     this.mapka?.();
   }

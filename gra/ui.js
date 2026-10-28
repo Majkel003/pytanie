@@ -67,8 +67,51 @@ export const UI = {
 
   /* ─────── czy HUD widoczny ─────── */
   hud(wlaczony) {
-    for (const id of ['mapkaRamka', 'cel']) {
+    for (const id of ['mapkaRamka', 'cel', 'przyciskiHud']) {
       $(id).style.display = wlaczony ? '' : 'none';
     }
+  },
+
+  /* ─────── panel wysuwany od dołu ─────── */
+  otworzPanel(tytul, html, przyZamknieciu) {
+    const p = $('panel');
+    p.querySelector('h2').textContent = tytul;
+    p.querySelector('.zawartosc').innerHTML = html;
+    p.classList.add('otwarty');
+    $('panelCien').classList.add('otwarty');
+    this._zamkniecie = przyZamknieciu || null;
+    return p.querySelector('.zawartosc');
+  },
+
+  zamknijPanel() {
+    $('panel').classList.remove('otwarty');
+    $('panelCien').classList.remove('otwarty');
+    const f = this._zamkniecie; this._zamkniecie = null;
+    f?.();
+  },
+
+  panelOtwarty() { return $('panel').classList.contains('otwarty'); },
+
+  /* ─────── zawartość ekwipunku ─────── */
+  rysujEkwipunek(lista, minSlotow = 6) {
+    if (!lista.length) {
+      return '<div class="pustka">Na razie nic nie masz przy sobie.</div>' +
+        '<div class="siatkaEkw">' + Array.from({ length: minSlotow },
+          () => '<div class="przedmiot pusty"></div>').join('') + '</div>';
+    }
+    const pelne = lista.map((it, i) =>
+      `<div class="przedmiot" style="animation-delay:${i * 45}ms">` +
+      `<span class="znak">${it.znak || '•'}</span>` +
+      `<span class="nazwa">${it.nazwa}</span></div>`).join('');
+    const puste = Array.from({ length: Math.max(0, minSlotow - lista.length) },
+      () => '<div class="przedmiot pusty"></div>').join('');
+    return '<div class="siatkaEkw">' + pelne + puste + '</div>';
+  },
+
+  /* ─────── licznik na ikonie ─────── */
+  licznik(id, n) {
+    const el = $(id).querySelector('.licznik');
+    el.textContent = n > 0 ? n : '';
+    el.dataset.puste = n > 0 ? '0' : '1';
   }
 };

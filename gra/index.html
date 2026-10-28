@@ -18,10 +18,29 @@
 <div id="blysk"></div>
 
 <div id="cel"><div class="etykieta">Zadanie</div><div class="tresc"></div></div>
+
 <div id="mapkaRamka"><canvas id="mapka" width="192" height="192"></canvas></div>
+
+<div id="przyciskiHud">
+  <button class="ikona" id="ikonaEkw" aria-label="Ekwipunek">
+    <svg viewBox="0 0 24 24"><path d="M5 9h14l1 11H4L5 9Z"/><path d="M9 9V6a3 3 0 0 1 6 0v3"/><path d="M8.5 13h7"/></svg>
+    <span class="licznik" data-puste="1"></span>
+  </button>
+  <button class="ikona" id="ikonaDzwiek" aria-label="Dźwięk">
+    <svg viewBox="0 0 24 24"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4v-5Z"/><path d="M15.5 9.2a4 4 0 0 1 0 5.6"/><path d="M18 7a7.4 7.4 0 0 1 0 10"/></svg>
+  </button>
+</div>
+
 <div id="podpowiedz"></div>
 <div id="szept"></div>
 <div id="drazek"><div id="galka"></div></div>
+
+<div id="panelCien"></div>
+<div id="panel">
+  <div class="uchwyt"></div>
+  <div class="naglowek"><h2></h2><button class="zamknij" id="panelZamknij">Zamknij</button></div>
+  <div class="zawartosc"></div>
+</div>
 
 <div id="kurtyna"></div>
 <div class="nakladka" id="ekran"></div>
@@ -29,49 +48,128 @@
 <script type="module">
 import { Gra, CELL } from './gra.js';
 import { UI } from './ui.js';
+import { Dzwiek } from './dzwiek.js';
+import { Postac, wczytajSprite } from './postacie.js';
 
 const gra = new Gra(document.getElementById('plotno'));
-gra.zbuduj(16, 16, 20261028);
+const dzwiek = new Dzwiek();
+gra.dzwiek = dzwiek;
+gra.zbuduj(22, 22, 20261028);
 gra.rozmiar();
 
-/* ─────────────── mapka odkrywana w trakcie ─────────────── */
-const mapa = document.getElementById('mapka');
-const mg = mapa.getContext('2d');
-let ostatniRysunek = 0;
-gra.mapka = () => {
-  // mapka nie musi się odświeżać co klatkę
-  const teraz = performance.now();
-  if (teraz - ostatniRysunek < 90) return;
-  ostatniRysunek = teraz;
-
-  const lab = gra.lab, n = Math.max(lab.w, lab.h);
-  const k = mapa.width / n;
-  mg.clearRect(0, 0, mapa.width, mapa.height);
+/* ─────────────── rysowanie mapy (ta sama dla małej i dużej) ─────────────── */
+function rysujMape(ctx, bok, { etykiety = false } = {}) {
+  const lab = gra.lab, n = Math.max(lab.w, lab.h), k = bok / n;
+  ctx.clearRect(0, 0, bok, bok);
 
   for (let y = 0; y < lab.h; y++) for (let x = 0; x < lab.w; x++) {
     if (!gra.odwiedzone[y * lab.w + x]) continue;
-    mg.fillStyle = 'rgba(201,162,74,.14)';
-    mg.fillRect(x * k, y * k, k, k);
-    mg.strokeStyle = 'rgba(201,162,74,.6)';
-    mg.lineWidth = 1.3;
-    mg.beginPath();
-    if (lab.ma(x, y, 1)) { mg.moveTo(x * k,     y * k);     mg.lineTo(x * k + k, y * k); }
-    if (lab.ma(x, y, 4)) { mg.moveTo(x * k,     y * k + k); mg.lineTo(x * k + k, y * k + k); }
-    if (lab.ma(x, y, 8)) { mg.moveTo(x * k,     y * k);     mg.lineTo(x * k,     y * k + k); }
-    if (lab.ma(x, y, 2)) { mg.moveTo(x * k + k, y * k);     mg.lineTo(x * k + k, y * k + k); }
-    mg.stroke();
+    ctx.fillStyle = 'rgba(201,162,74,.14)';
+    ctx.fillRect(x * k, y * k, k, k);
+    ctx.strokeStyle = 'rgba(201,162,74,.6)';
+    ctx.lineWidth = Math.max(1, k * 0.085);
+    ctx.beginPath();
+    if (lab.ma(x, y, 1)) { ctx.moveTo(x * k,     y * k);     ctx.lineTo(x * k + k, y * k); }
+    if (lab.ma(x, y, 4)) { ctx.moveTo(x * k,     y * k + k); ctx.lineTo(x * k + k, y * k + k); }
+    if (lab.ma(x, y, 8)) { ctx.moveTo(x * k,     y * k);     ctx.lineTo(x * k,     y * k + k); }
+    if (lab.ma(x, y, 2)) { ctx.moveTo(x * k + k, y * k);     ctx.lineTo(x * k + k, y * k + k); }
+    ctx.stroke();
+  }
+
+  // znaczniki rzeczy, o których gracz już wie
+  for (const z of gra.znaczniki || []) {
+    if (!gra.odwiedzone[z.y * lab.w + z.x]) continue;
+    ctx.fillStyle = z.kolor || '#e4c47a';
+    ctx.beginPath();
+    ctx.arc(z.x * k + k / 2, z.y * k + k / 2, Math.max(2, k * 0.18), 0, 7);
+    ctx.fill();
   }
 
   const px = gra.pozycja.x / CELL * k, py = gra.pozycja.z / CELL * k;
-  mg.save();
-  mg.translate(px, py);
-  mg.rotate(-gra.obrot.y);
-  mg.fillStyle = '#f2ead8';
-  mg.beginPath();
-  mg.moveTo(0, -5.5); mg.lineTo(4.2, 4.8); mg.lineTo(0, 2.2); mg.lineTo(-4.2, 4.8);
-  mg.closePath(); mg.fill();
-  mg.restore();
+  const r = Math.max(4.5, k * 0.34);
+  ctx.save();
+  ctx.translate(px, py);
+  ctx.rotate(-gra.obrot.y);
+  ctx.fillStyle = '#f2ead8';
+  ctx.beginPath();
+  ctx.moveTo(0, -r * 1.25); ctx.lineTo(r * 0.95, r * 1.08);
+  ctx.lineTo(0, r * 0.5);   ctx.lineTo(-r * 0.95, r * 1.08);
+  ctx.closePath(); ctx.fill();
+  ctx.restore();
+
+  if (etykiety) {
+    const ile = gra.odwiedzone.reduce((a, b) => a + b, 0);
+    ctx.fillStyle = 'rgba(201,162,74,.75)';
+    ctx.font = '600 ' + Math.round(bok * 0.028) + 'px Oswald, sans-serif';
+    ctx.fillText('ZWIEDZONE ' + Math.round(ile / (lab.w * lab.h) * 100) + '%', 4, bok - 5);
+  }
+}
+
+const mg = document.getElementById('mapka').getContext('2d');
+let ostatniRysunek = 0, duzyCtx = null;
+gra.mapka = () => {
+  const teraz = performance.now();
+  if (teraz - ostatniRysunek < 90) return;
+  ostatniRysunek = teraz;
+  rysujMape(mg, 192);
+  if (duzyCtx) rysujMape(duzyCtx, 840, { etykiety: true });
 };
+
+/* ─────────────── panel: duża mapa i ekwipunek ─────────────── */
+function zamknij() {
+  duzyCtx = null;
+  gra.zamrozony = false;
+  gra.zablokowaneWejscie = false;
+  UI.zamknijPanel();
+  dzwiek.klik();
+}
+document.getElementById('panelZamknij').addEventListener('click', zamknij);
+document.getElementById('panelCien').addEventListener('click', zamknij);
+
+function wstrzymaj() {
+  gra.zamrozony = true;
+  gra.zablokowaneWejscie = true;
+  gra.sterowanie.przod = gra.sterowanie.bok = 0;
+  document.getElementById('drazek').classList.remove('widoczny');
+  dzwiek.klik();
+}
+
+document.getElementById('mapkaRamka').addEventListener('click', () => {
+  if (UI.panelOtwarty()) return;
+  wstrzymaj();
+  const ciało = UI.otworzPanel('Mapa', '<canvas id="duzaMapa" width="840" height="840"></canvas>');
+  duzyCtx = ciało.querySelector('#duzaMapa').getContext('2d');
+  rysujMape(duzyCtx, 840, { etykiety: true });
+});
+
+function otworzEkwipunek() {
+  if (UI.panelOtwarty()) return;
+  wstrzymaj();
+  UI.otworzPanel('Ekwipunek', UI.rysujEkwipunek(gra.ekwipunek));
+}
+document.getElementById('ikonaEkw').addEventListener('click', otworzEkwipunek);
+
+/* dodawanie przedmiotu: odświeża licznik i gra dźwięk */
+gra.dodajPrzedmiot = (przedmiot) => {
+  gra.ekwipunek.push(przedmiot);
+  UI.licznik('ikonaEkw', gra.ekwipunek.length);
+  dzwiek.zdobycz();
+};
+
+/* ─────────────── przełącznik dźwięku ─────────────── */
+const ikonaDzwiek = document.getElementById('ikonaDzwiek');
+ikonaDzwiek.addEventListener('click', () => {
+  const wl = dzwiek.przelacz();
+  ikonaDzwiek.classList.toggle('wyciszony', !wl);
+  if (wl) dzwiek.klik();
+});
+
+/* gra w tle nie ma prawa grać dalej */
+document.addEventListener('visibilitychange', () => {
+  if (!dzwiek.gotowy) return;
+  if (document.hidden) dzwiek.ctx.suspend();
+  else if (dzwiek.wlaczony) dzwiek.ctx.resume();
+});
 
 /* ─────────────── wejście do gry ─────────────── */
 UI.hud(false);
@@ -83,10 +181,12 @@ const start = UI.pokazNakladke('ekran', {
     'Znajdź go i wyprowadź oboje na zewnątrz.'
   ],
   przycisk: 'Wchodzę',
-  wskazowka: '<b>Lewy kciuk</b> chodzi<br><b>Prawa strona</b> rozgląda'
+  wskazowka: '<b>Lewy kciuk</b> chodzi<br><b>Prawa strona</b> rozgląda<br>Najlepiej w słuchawkach'
 });
 
 start.addEventListener('click', async () => {
+  await dzwiek.odblokuj();          // musi paść w geście, inaczej Safari milczy
+  dzwiek.start();
   await UI.zaslon(420);
   UI.ukryjNakladke('ekran');
   UI.hud(true);
@@ -96,8 +196,30 @@ start.addEventListener('click', async () => {
   await UI.szept('Za tobą zamknęły się drzwi.');
 }, { once: true });
 
+/* ─────────────── postacie na planszy (na razie jedna, na próbę) ─────────────── */
+const postacie = [];
+(async () => {
+  const sprite = await wczytajSprite('postacie/programista.png');
+  const p = new Postac(gra.scena, sprite, { wysokosc: 1.76, nazwa: 'Programista' });
+  // dwie komórki dalej wzdłuż otwartego korytarza
+  const lab = gra.lab;
+  let cx = 0, cz = 0;
+  for (let i = 0; i < 3; i++) {
+    if (!lab.ma(cx, cz, 2) && lab.w_srodku(cx + 1, cz)) cx++;
+    else if (!lab.ma(cx, cz, 4) && lab.w_srodku(cx, cz + 1)) cz++;
+  }
+  p.ustaw(cx * CELL + CELL / 2, cz * CELL + CELL / 2);
+  postacie.push(p);
+  window.postacie = postacie;
+})();
+
+gra.naTik = (dt) => {
+  for (const p of postacie) p.patrzNa(gra.kamera, gra.czas, dt);
+};
+
 window.gra = gra;
 window.UI = UI;
+window.dzwiek = dzwiek;
 </script>
 </body>
 </html>
