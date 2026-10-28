@@ -1,7 +1,7 @@
-import * as THREE from './lib/three.module.js?v=1793189264';
-import { GLTFLoader } from './lib/GLTFLoader.js?v=1793189264';
-import { mergeGeometries } from './lib/BufferGeometryUtils.js?v=1793189264';
-import { CELL } from './gra.js?v=1793189264';
+import * as THREE from './lib/three.module.js?v=1793190371';
+import { GLTFLoader } from './lib/GLTFLoader.js?v=1793190371';
+import { mergeGeometries } from './lib/BufferGeometryUtils.js?v=1793190371';
+import { CELL } from './gra.js?v=1793190371';
 
 /* Modele wstawiane do labiryntu. Każdy wczytywany raz i powielany przez
    klonowanie, bo kopia dzieli geometrię i teksturę z oryginałem i nie

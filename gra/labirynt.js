@@ -148,6 +148,16 @@ export class Labirynt {
     return false;
   }
 
+  /* Czy dwa pola stykają się bez ściany (albo są tym samym polem).
+     Używane do słyszenia: dźwięk nie ma przechodzić przez mur. */
+  polaczone(ax, ay, bx, by) {
+    if (ax === bx && ay === by) return true;
+    for (const [k, dx, dy] of [[N, 0, -1], [E, 1, 0], [S, 0, 1], [W, -1, 0]]) {
+      if (ax + dx === bx && ay + dy === by) return !this.ma(ax, ay, k);
+    }
+    return false;
+  }
+
   /* Losowe osiągalne pole oddalone o co najmniej `min` kroków od podanego. */
   losoweDaleko(sx, sy, min = 8) {
     const d = this.odleglosci(sx, sy);

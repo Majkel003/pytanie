@@ -1,8 +1,8 @@
-import * as THREE from './lib/three.module.js?v=1793189264';
-import { Postac, wczytajSprite } from './postacie.js?v=1793189264';
-import { Pajak } from './pajak.js?v=1793189264';
-import { CELL } from './gra.js?v=1793189264';
-import { N, E, S, W } from './labirynt.js?v=1793189264';
+import * as THREE from './lib/three.module.js?v=1793190371';
+import { Postac, wczytajSprite } from './postacie.js?v=1793190371';
+import { Pajak } from './pajak.js?v=1793190371';
+import { CELL } from './gra.js?v=1793190371';
+import { N, E, S, W } from './labirynt.js?v=1793190371';
 
 /* Logika świata: kto gdzie stoi, kto za kim chodzi, kiedy otwiera się wyjście.
    Silnik (gra.js) nie wie nic o fabule, a to tutaj nie dotyka renderowania. */
@@ -133,15 +133,30 @@ export class Swiat {
     this.postacie.push(this.fenek);
     this.fenekZabrany = false;
 
+    // Stoisko wyznaczamy przed resztą, bo jego bryła blokuje całą komórkę
+    // i każdy, kto by w niej stanął, utknąłby w środku.
+    this.#postawStoisko(fx, fy);
+    const zajeta = this.stoisko ? this.stoisko.komorka : null;
+    const wolne = (k) => k && !(zajeta && k.x === zajeta[0] && k.y === zajeta[1]);
+    const losujWolne = (min) => {
+      for (let i = 0; i < 14; i++) {
+        const k = lab.losoweDaleko(sx, sy, min);
+        if (wolne(k)) return k;
+      }
+      const z = this.zapasowePole(min);
+      return wolne(z) ? z : { x: Math.max(0, lab.w - 2), y: Math.max(0, lab.h - 2) };
+    };
+    this.losujWolne = losujWolne;
+
     // programista: gdzieś po drodze, nieruchomy, od gadania
-    const pr = lab.losoweDaleko(sx, sy, 6) || this.zapasowePole(6);
+    const pr = losujWolne(6);
     this.programista = new Postac(gra.scena, this.sprite.programista,
       { wysokosc: 1.74, nazwa: 'Programista' });
     this.programista.ustaw(pr.x * CELL + CELL / 2, pr.y * CELL + CELL / 2);
     this.postacie.push(this.programista);
 
     // Remcioszek: start daleko od gracza, trasa losowana za każdym razem
-    const rm = lab.losoweDaleko(sx, sy, 14) || this.zapasowePole(14);
+    const rm = losujWolne(14);
     this.remcioszek = new Postac(gra.scena, this.sprite.remcioszek,
       { wysokosc: 1.95, nazwa: 'Remcioszek', kolysanie: 1.8 });
     this.remcioszek.ustaw(rm.x * CELL + CELL / 2, rm.y * CELL + CELL / 2);
@@ -156,7 +171,7 @@ export class Swiat {
     this.tecza.position.set(this.remRuch.poz.x, 1.7, this.remRuch.poz.y);
     gra.scena.add(this.tecza);
 
-    this.#postawStoisko(fx, fy);
+    this.#postawSzczerbatka();
     this.#rozstawPajaki(3);
 
     this.znacznikiNaMapie();
@@ -170,18 +185,10 @@ export class Swiat {
   #rozstawPajaki(ile) {
     const lab = this.gra.lab;
     this.pajaki = [];
-    const zajeta = this.stoisko ? this.stoisko.komorka : null;
     for (let i = 0; i < ile; i++) {
-      let k = null;
-      // kilka podejść, żeby pająk nie wylądował w środku stoiska i nie utknął
-      for (let proba = 0; proba < 12; proba++) {
-        const kand = lab.losoweDaleko(0, 0, 10) || this.zapasowePole(10);
-        if (!kand) break;
-        if (zajeta && kand.x === zajeta[0] && kand.y === zajeta[1]) continue;
-        k = kand; break;
-      }
+      const k = this.losujWolne ? this.losujWolne(10) : lab.losoweDaleko(0, 0, 10);
       if (!k) continue;
-      const p = new Pajak(this.gra.scena, { skala: 0.62 });
+      const p = new Pajak(this.gra.scena, { skala: 0.95 });
       p.ustaw(k.x * CELL + CELL / 2, k.y * CELL + CELL / 2);
       this.pajaki.push({
         model: p,
@@ -214,9 +221,12 @@ export class Swiat {
           if (p.odpoczynek > 4) { p.stan = 'lazi'; p.odpoczynek = 0; }
         } else p.odpoczynek = 0;
 
-        if (odl < 1.5) { this.naZdarzenie?.('pajak', p.model); p.stan = 'lazi'; p.odpoczynek = 0;
-                         const uciec = lab.losoweDaleko(px, py, 6);
-                         if (uciec) p.ruch.ustawCel(uciec.x, uciec.y); }
+        if (odl < 1.5) {
+          this.naZdarzenie?.('pajak', p.model);
+          // Po spotkaniu pająk nie może zostać na miejscu, bo zaraz
+          // zaczepiłby gracza drugi raz. Przenosimy go daleko stąd.
+          this.przeniesPajaka(p);
+        }
       }
 
       p.model.ustaw(p.ruch.poz.x, p.ruch.poz.y);
@@ -225,10 +235,47 @@ export class Swiat {
     }
   }
 
+  /* Szczerbatek: leży gdzieś w zaułku, a znaleziony dreptuje przy nodze.
+     Nie wpływa na przechodniość, jest nagrodą za zwiedzanie.          */
+  #postawSzczerbatka() {
+    const lab = this.gra.lab;
+    const k = this.losujWolne ? this.losujWolne(12) : lab.losoweDaleko(0, 0, 12);
+    if (!k) { this.smok = null; return; }
+    this.smok = {
+      komorka: [k.x, k.y],
+      srodek: { x: k.x * CELL + CELL / 2, z: k.y * CELL + CELL / 2 },
+      znaleziony: false, model: null,
+      ruch: new Ruch(lab, k.x * CELL + CELL / 2, k.y * CELL + CELL / 2)
+    };
+    this.naZdarzenie?.('smok-postawiony', this.smok);
+  }
+
+  #szczerbatek(dt) {
+    const s = this.smok;
+    if (!s || !s.model) return;
+    if (!s.znaleziony) { s.model.rotation.y += dt * 0.5; return; }
+
+    const g = this.gra;
+    const [gx, gy] = g.komorka();
+    const odl = Math.hypot(g.pozycja.x - s.ruch.poz.x, g.pozycja.z - s.ruch.poz.y);
+    if (odl > CELL * 0.55) {
+      s.ruch.ustawCel(gx, gy);
+      s.ruch.krok(dt, odl > CELL * 2.5 ? 6.2 : 4.4);
+    }
+    s.model.position.set(s.ruch.poz.x, 0, s.ruch.poz.y);
+    if (s.ruch.kierunek !== undefined) s.model.rotation.y = s.ruch.kierunek;
+    // drobne podskakiwanie, żeby nie sunął jak mebel
+    s.model.position.y = Math.abs(Math.sin(this.czas * 6)) * 0.07;
+  }
+
   /* Stoisko z kiełbasą zamykające korytarz w połowie drogi do Fenka.
      Stawiamy je na trasie, żeby nie dało się go ominąć przypadkiem. */
   #postawStoisko(fx, fy) {
     const lab = this.gra.lab;
+    // bryła z poprzedniego rozstawienia musi zejść z kolizji, inaczej
+    // w labiryncie zostają niewidzialne blokady po starych stoiskach
+    if (this.stoisko?.przeszkoda) this.gra.usunPrzeszkode(this.stoisko.przeszkoda);
+    if (this.stoisko?.model) this.stoisko.model.visible = false;
     const pole = lab.odleglosci(fx, fy);
     const trasa = [];
     let cx = 0, cy = 0, n = 0;
@@ -271,6 +318,23 @@ export class Swiat {
     this.dzwiek?.otwarcie();
   }
 
+  /* Przeniesienie pająka w odległe miejsce labiryntu. */
+  przeniesPajaka(p) {
+    const lab = this.gra.lab;
+    const [gx, gy] = this.gra.komorka();
+    let cel = null;
+    for (let i = 0; i < 20; i++) {
+      const k = lab.losoweDaleko(gx, gy, 12);
+      if (k) { cel = k; break; }
+    }
+    if (!cel) cel = this.zapasowePole ? this.zapasowePole(12) : null;
+    if (!cel) return;
+    p.ruch.poz.set(cel.x * CELL + CELL / 2, cel.y * CELL + CELL / 2);
+    p.ruch.cel = null; p.ruch.nastepna = null;
+    p.stan = 'lazi'; p.odpoczynek = 0;
+    p.model.ustaw(p.ruch.poz.x, p.ruch.poz.y);
+  }
+
   znacznikiNaMapie() {
     const g = this.gra;
     g.znaczniki = [];
@@ -282,6 +346,40 @@ export class Swiat {
     this.postacie = [];
     if (this.pajaki) { for (const p of this.pajaki) p.model.usun(); this.pajaki = null; }
     if (this.tecza) { this.gra.scena.remove(this.tecza); this.tecza = null; }
+  }
+
+  /* Dymek nad postacią: trzymamy go przez zadany czas i co klatkę
+     przeliczamy pozycję, żeby jechał razem z obrotem kamery. */
+  powiedz(postac, kto, tekst, ms = 3200) {
+    this.mowi = { postac, kto, tekst, do: this.czas + ms / 1000 };
+    this.ui.dymek(kto, tekst);
+  }
+
+  #utrzymajDymek() {
+    if (!this.mowi) return;
+    if (this.czas > this.mowi.do) { this.mowi = null; this.ui.dymek(null, ''); return; }
+    const g = this.gra;
+    const p = this.mowi.postac.pozycja;
+    const wys = (this.mowi.postac.wysokosc || 1.6) + 0.35;
+
+    // Czy postać jest przed kamerą: rzut sam w sobie myli przy punktach
+    // za plecami, więc liczymy iloczyn skalarny z kierunkiem patrzenia.
+    const przod = { x: -Math.sin(g.obrot.y), z: -Math.cos(g.obrot.y) };
+    const doNiej = { x: p.x - g.pozycja.x, z: p.z - g.pozycja.z };
+    if (przod.x * doNiej.x + przod.z * doNiej.z <= 0.2) {
+      this.ui.dymek(null, '');
+      return;
+    }
+
+    const v = new THREE.Vector3(p.x, wys, p.z);
+    g.kamera.updateMatrixWorld();
+    v.project(g.kamera);
+    if (Math.abs(v.x) > 1.2 || Math.abs(v.y) > 1.2) {
+      this.ui.dymek(null, '');
+      return;
+    }
+    this.ui.dymek(this.mowi.kto, this.mowi.tekst);
+    this.ui.przesunDymek((v.x * 0.5 + 0.5) * innerWidth, (-v.y * 0.5 + 0.5) * innerHeight);
   }
 
   /* ───────── odległość gracza do punktu w świecie ───────── */
@@ -303,6 +401,8 @@ export class Swiat {
 
     if (this.remcioszek && this.tecza) this.#remcioszek(dt);
     this.#pajaki(dt);
+    this.#szczerbatek(dt);
+    this.#utrzymajDymek();
     if (this.fenek) this.#fenek(dt);
     this.#podpowiedzi();
   }
@@ -316,7 +416,10 @@ export class Swiat {
     const odl = this.#odleglosc(this.remcioszek.pozycja);
 
     const widzi = lab.widacSie(rx, ry, gx, gy, 6);
-    const slyszy = odl < CELL * 2.2;
+    // Słyszy tylko z sąsiedniej komórki i tylko wtedy, gdy nie dzieli ich
+    // ściana. Sam dystans nie wystarczał, bo środki sąsiednich pól dzielą
+    // dokładnie cztery jednostki niezależnie od muru między nimi.
+    const slyszy = odl < CELL * 1.1 && lab.polaczone(rx, ry, gx, gy);
 
     if (this.remStan === 'blada') {
       if (widzi || slyszy) {
@@ -415,6 +518,17 @@ export class Swiat {
     }
     this.przyProgramiscie = false;
 
+    if (this.smok && !this.smok.znaleziony && this.smok.model) {
+      const d = Math.hypot(g.pozycja.x - this.smok.srodek.x,
+                           g.pozycja.z - this.smok.srodek.z);
+      if (d < 2.8) {
+        this.ui.podpowiedz('Weź Szczerbatka');
+        this.przySmoku = true;
+        return;
+      }
+    }
+    this.przySmoku = false;
+
     if (this.stoisko && !this.stoisko.rozwiazane) {
       const d = Math.hypot(g.pozycja.x - this.stoisko.srodek.x,
                            g.pozycja.z - this.stoisko.srodek.z);
@@ -443,11 +557,20 @@ export class Swiat {
     this.przyDrzwiach = false;
     this.zamknieteDrzwi = false;
     this.przyStoisku = false;
+    this.przySmoku = false;
     this.ui.podpowiedz('');
   }
 
   /* ───────── reakcja na stuknięcie w ekran ───────── */
   uzyj() {
+    if (this.przySmoku) {
+      this.smok.znaleziony = true;
+      this.przySmoku = false;
+      this.dzwiek?.zdobycz();
+      this.gra.dodajPrzedmiot?.({ znak: '🐉', nazwa: 'Szczerbatek' });
+      this.naZdarzenie?.('smok');
+      return true;
+    }
     if (this.przyStoisku) { this.naZdarzenie?.('stoisko'); return true; }
     if (this.przyFenku) {
       this.fenekZabrany = true;

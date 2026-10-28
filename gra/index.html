@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,600;1,400&family=Oswald:wght@300;400&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styl.css?v=1793189264">
+<link rel="stylesheet" href="styl.css?v=1793190371">
 <script>
 /* Łapacz awarii: bez tego błąd w module daje tylko czarny ekran
    i nie wiadomo, czy gra się zawiesiła, czy jeszcze wczytuje. */
@@ -55,6 +55,7 @@
 
 <div id="podpowiedz"></div>
 <div id="szept"></div>
+<div id="dymek"></div>
 <div id="drazek"><div id="galka"></div></div>
 
 <div id="panelCien"></div>
@@ -69,12 +70,12 @@
 <div class="nakladka" id="ekran"></div>
 
 <script type="module">
-import { Gra, CELL } from './gra.js?v=1793189264';
-import { UI } from './ui.js?v=1793189264';
-import { Dzwiek } from './dzwiek.js?v=1793189264';
-import { Swiat } from './swiat.js?v=1793189264';
-import { Rekwizyty } from './rekwizyty.js?v=1793189264';
-import { ratujFenka, jumpscare, kielbasa } from './minigry.js?v=1793189264';
+import { Gra, CELL } from './gra.js?v=1793190371';
+import { UI } from './ui.js?v=1793190371';
+import { Dzwiek } from './dzwiek.js?v=1793190371';
+import { Swiat } from './swiat.js?v=1793190371';
+import { Rekwizyty } from './rekwizyty.js?v=1793190371';
+import { ratujFenka, jumpscare, kielbasa } from './minigry.js?v=1793190371';
 
 const gra = new Gra(document.getElementById('plotno'));
 const dzwiek = new Dzwiek();
@@ -255,12 +256,25 @@ const KWESTIE = {
   programista: [
     'O, hej. Idę szukać myszki do kompa.',
     'Powodzenia w szukaniu Fenka.',
-    'Jakby co, Remcioszek poszedł tamtędy. Chyba. Nie patrzyłem.'
+    'Remcioszek poszedł tamtędy. Chyba. Nie patrzyłem.',
+    'Nie, serio, gdzie jest ta myszka.'
   ]
 };
 let ktoraKwestia = 0;
 
 swiat.naZdarzenie = async (co, szczegol) => {
+  if (co === 'smok-postawiony') {
+    rekwizyty.wnetrze('modele/szczerbatek.glb', {
+      srodek: szczegol.srodek, szerokosc: 1.05
+    }).then(r => { szczegol.model = r.obiekt; })
+      .catch(e => console.warn('szczerbatek:', e.message));
+    return;
+  }
+  if (co === 'smok') {
+    swiat.powiedz(swiat.fenek && swiat.fenekZabrany ? swiat.fenek : { pozycja: gra.pozycja, wysokosc: 1.2 },
+      '', 'Szczerbatek idzie z Tobą.', 2400);
+    return;
+  }
   if (co === 'stoisko-postawione') {
     // model dostawiany po rozstawieniu, bo wczytuje się w tle
     rekwizyty.wnetrze('modele/stragan.glb', {
@@ -277,12 +291,11 @@ swiat.naZdarzenie = async (co, szczegol) => {
     const t = KWESTIE.programista[ktoraKwestia % KWESTIE.programista.length];
     ktoraKwestia++;
     dzwiek.klik();
-    UI.szept(t, 2400);
+    swiat.powiedz(swiat.programista, 'Programista', t, 3400);
     return;
   }
   if (co === 'fenek') {
-    await UI.szept('Wiedziałem, że przyjdziesz.', 2200);
-    UI.szept('Trzymaj się blisko.', 1800);
+    swiat.powiedz(swiat.fenek, 'Fenek', 'Wiedziałem, że przyjdziesz. Trzymaj się blisko.', 3600);
     return;
   }
   if (co === 'zauwazyl') {
@@ -340,6 +353,12 @@ async function celaStartowa() {
     szerokosc: pokoj.bok - 0.3
   }).catch(e => { console.warn('sala:', e.message); return null; });
 
+  // drzwi na tylnej ścianie: wyjście ma być widoczne, a nie domyślne
+  rekwizyty.wnetrze('modele/drzwi.glb', {
+    srodek: { x: pokoj.srodek.x, z: pokoj.glebokosc - 0.45 },
+    szerokosc: 2.3, obrot: Math.PI
+  }).catch(e => console.warn('drzwi:', e.message));
+
   // gracz stoi tuż przed otwartą stroną dioramy i patrzy w jej wnętrze;
   // wyjście zostaje za plecami, w głębi pomieszczenia
   const glebSali = wnetrzeSali ? wnetrzeSali.rozmiar.z : 4.4;
@@ -352,6 +371,7 @@ async function celaStartowa() {
   UI.cel('Wyjdź z celi');
   UI.hud(true);
   celaGotowa = true;
+  window.__celaGotowa = true;
   (async () => {
     await UI.szept('Obudziłaś się w celi.', 2200);
     if (wCeli) await UI.szept('Fenka tu nie ma. Wyjście jest za tobą.', 2400);
@@ -371,6 +391,7 @@ let czekaNaWyjscie = false;
 
 async function doLabiryntu() {
   wCeli = false; celaGotowa = false; czekaNaWyjscie = false;
+  window.__celaGotowa = false;
   gra.zamrozony = true;
   UI.podpowiedz('');
   dzwiek.otwarcie();
@@ -439,6 +460,7 @@ async function smierc() {
     swiat.rozpocznij();
     rekwizyty.pochodnieNaScianach(16).catch(e => console.warn('pochodnie:', e.message));
     rekwizyty.drobiazgi(14);
+    UI.dymek(null, '');
     UI.hud(true);
     gra.zamrozony = false;
     wTrakcieSmierci = false;

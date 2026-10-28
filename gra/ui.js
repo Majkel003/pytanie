@@ -109,6 +109,24 @@ export const UI = {
     return '<div class="siatkaEkw">' + pelne + puste + '</div>';
   },
 
+  /* ─────── dymek nad postacią ───────
+     Pozycję liczy logika gry (rzut punktu świata na ekran), tutaj jest
+     tylko wyświetlanie, żeby UI nie musiało nic wiedzieć o kamerze.   */
+  dymek(kto, tekst) {
+    const el = $('dymek');
+    if (!tekst) { el.classList.remove('widoczny'); return; }
+    el.innerHTML = (kto ? `<span class="kto">${kto}</span>` : '') + tekst;
+    el.classList.add('widoczny');
+  },
+
+  przesunDymek(x, y) {
+    const el = $('dymek');
+    el.style.left = x + 'px';
+    el.style.top = y + 'px';
+  },
+
+  dymekWidoczny() { return $('dymek').classList.contains('widoczny'); },
+
   /* ─────── licznik na ikonie ─────── */
   licznik(id, n) {
     const el = $(id).querySelector('.licznik');

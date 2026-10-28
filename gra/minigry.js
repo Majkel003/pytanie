@@ -22,6 +22,7 @@ export function ratujFenka(dzwiek, { doZlapania = 12, zycia = 4, czasFali = 950 
     nakladka.classList.add('wlaczona');
 
     const arena = $('mgarena');
+    const foto = arena.querySelector('.mgfenek');
     let stracone = 0, zostalo = zycia, koniec = false;
     const zyjace = new Set();
     const czasomierze = [];
@@ -99,6 +100,16 @@ export function ratujFenka(dzwiek, { doZlapania = 12, zycia = 4, czasFali = 950 
       const dt = Math.min((teraz - ostatni) / 1000, 0.05);
       ostatni = teraz;
 
+      // Prostokąt zdjęcia liczymy co klatkę: to on jest celem, nie środek
+      // areny. Wcześniej pająk odbierał życie dopiero w samym centrum,
+      // choć wizualnie łaził już po Fenku.
+      const ra = arena.getBoundingClientRect();
+      const rf = foto ? foto.getBoundingClientRect() : null;
+      const cel = rf
+        ? { x0: rf.left - ra.left, y0: rf.top - ra.top,
+            x1: rf.right - ra.left, y1: rf.bottom - ra.top }
+        : null;
+
       for (const p of [...zyjace]) {
         const dx = p.cx - p.x, dy = p.cy - p.y;
         const d = Math.hypot(dx, dy) || 1;
@@ -107,7 +118,13 @@ export function ratujFenka(dzwiek, { doZlapania = 12, zycia = 4, czasFali = 950 
         const kat = Math.atan2(dy, dx) + Math.PI / 2;
         p.el.style.transform = `translate(${p.x}px, ${p.y}px) rotate(${kat}rad)`;
 
-        if (d < 34) {
+        // dotknięcie sylwetki, z niewielkim marginesem na odnóża
+        const m = 10;
+        const dotyka = cel
+          ? (p.x > cel.x0 - m && p.x < cel.x1 + m && p.y > cel.y0 - m && p.y < cel.y1 + m)
+          : (d < 34);
+
+        if (dotyka) {
           zyjace.delete(p);
           p.el.remove();
           if (koniec) continue;
@@ -136,10 +153,10 @@ export function jumpscare(gra, pajak, dzwiek, ms = 900) {
     };
 
     const przod = { x: -Math.sin(gra.obrot.y), z: -Math.cos(gra.obrot.y) };
-    pajak.korzen.position.set(kam.position.x + przod.x * 1.15, 0.2,
-                              kam.position.z + przod.z * 1.15);
+    pajak.korzen.position.set(kam.position.x + przod.x * 0.95, 0.25,
+                              kam.position.z + przod.z * 0.95);
     pajak.korzen.rotation.y = gra.obrot.y + Math.PI;
-    pajak.korzen.scale.setScalar(zapamietane.skala * 2.3);
+    pajak.korzen.scale.setScalar(zapamietane.skala * 3.1);
 
     gra.zamrozony = true;
     dzwiek?.zlapanie();

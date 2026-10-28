@@ -1,5 +1,5 @@
-import * as THREE from './lib/three.module.js?v=1793189264';
-import { Labirynt, N, E, S, W } from './labirynt.js?v=1793189264';
+import * as THREE from './lib/three.module.js?v=1793190371';
+import { Labirynt, N, E, S, W } from './labirynt.js?v=1793190371';
 
 /* ───────────────── wymiary świata ───────────────── */
 export const CELL = 4;        // bok komórki labiryntu
