@@ -1,7 +1,7 @@
-import * as THREE from './lib/three.module.js?v=1793185890';
-import { Postac, wczytajSprite } from './postacie.js?v=1793185890';
-import { Pajak } from './pajak.js?v=1793185890';
-import { CELL } from './gra.js?v=1793185890';
+import * as THREE from './lib/three.module.js?v=1793188105';
+import { Postac, wczytajSprite } from './postacie.js?v=1793188105';
+import { Pajak } from './pajak.js?v=1793188105';
+import { CELL } from './gra.js?v=1793188105';
 
 /* Logika świata: kto gdzie stoi, kto za kim chodzi, kiedy otwiera się wyjście.
    Silnik (gra.js) nie wie nic o fabule, a to tutaj nie dotyka renderowania. */
@@ -90,6 +90,22 @@ export class Swiat {
     const lab = gra.lab;
     this.usunPostacie();
 
+    // Rozstawienie ma sens tylko w labiryncie. W małym pomieszczeniu
+    // nie ma dokąd nikogo postawić i bez tej blokady całość się wysypywała.
+    if (!gra.wyjscie || lab.w < 6 || lab.h < 6) {
+      this.stan = 'cela';
+      return false;
+    }
+
+    /* zapasowe pole, gdy losowanie nie znajdzie nic dość daleko */
+    const zapasowe = (min) => {
+      const d = lab.odleglosci(0, 0);
+      let naj = 0, najd = -1;
+      for (let i = 0; i < d.length; i++) if (d[i] > najd) { najd = d[i]; naj = i; }
+      return { x: naj % lab.w, y: Math.floor(naj / lab.w) };
+    };
+    this.zapasowePole = zapasowe;
+
     const [sx, sy] = [0, 0];
     const doWyjscia = gra.wyjscie
       ? lab.odleglosci(gra.wyjscie.x, gra.wyjscie.y)
@@ -117,20 +133,21 @@ export class Swiat {
     this.fenekZabrany = false;
 
     // programista: gdzieś po drodze, nieruchomy, od gadania
-    const pr = lab.losoweDaleko(sx, sy, 6);
+    const pr = lab.losoweDaleko(sx, sy, 6) || this.zapasowePole(6);
     this.programista = new Postac(gra.scena, this.sprite.programista,
       { wysokosc: 1.74, nazwa: 'Programista' });
     this.programista.ustaw(pr.x * CELL + CELL / 2, pr.y * CELL + CELL / 2);
     this.postacie.push(this.programista);
 
     // Remcioszek: start daleko od gracza, trasa losowana za każdym razem
-    const rm = lab.losoweDaleko(sx, sy, 14) || { x: lab.w - 1, y: lab.h - 1 };
+    const rm = lab.losoweDaleko(sx, sy, 14) || this.zapasowePole(14);
     this.remcioszek = new Postac(gra.scena, this.sprite.remcioszek,
       { wysokosc: 1.95, nazwa: 'Remcioszek', kolysanie: 1.8 });
     this.remcioszek.ustaw(rm.x * CELL + CELL / 2, rm.y * CELL + CELL / 2);
     this.remRuch = new Ruch(lab, rm.x * CELL + CELL / 2, rm.y * CELL + CELL / 2);
     this.remStan = 'blada';
     this.remBezTropu = 0;
+    this.dotyk = 0;
     this.postacie.push(this.remcioszek);
 
     // tęczowe światło: nie rzucamy cieni, więc łuna sama wychodzi zza rogu
@@ -143,6 +160,7 @@ export class Swiat {
     this.znacznikiNaMapie();
     this.stan = 'szukanie';
     this.ui.cel('Znajdź Fenka');
+    return true;
   }
 
   /* Pająki: wałęsają się po labiryncie, a gdy zobaczą gracza z korytarza,
@@ -151,7 +169,7 @@ export class Swiat {
     const lab = this.gra.lab;
     this.pajaki = [];
     for (let i = 0; i < ile; i++) {
-      const k = lab.losoweDaleko(0, 0, 10);
+      const k = lab.losoweDaleko(0, 0, 10) || this.zapasowePole(10);
       if (!k) continue;
       const p = new Pajak(this.gra.scena, { skala: 0.62 });
       p.ustaw(k.x * CELL + CELL / 2, k.y * CELL + CELL / 2);
@@ -186,7 +204,7 @@ export class Swiat {
           if (p.odpoczynek > 4) { p.stan = 'lazi'; p.odpoczynek = 0; }
         } else p.odpoczynek = 0;
 
-        if (odl < 1.5) { this.naZdarzenie?.('pajak'); p.stan = 'lazi'; p.odpoczynek = 0;
+        if (odl < 1.5) { this.naZdarzenie?.('pajak', p.model); p.stan = 'lazi'; p.odpoczynek = 0;
                          const uciec = lab.losoweDaleko(px, py, 6);
                          if (uciec) p.ruch.ustawCel(uciec.x, uciec.y); }
       }
@@ -223,8 +241,9 @@ export class Swiat {
 
     for (const p of this.postacie) p.patrzNa(g.kamera, this.czas, dt);
 
-    // po scenie końcowej nie ma już ani Remcioszka, ani drzwi, ani celów
-    if (this.stan === 'wyszli') return;
+    // w celi i po scenie końcowej nie ma ani postaci, ani drzwi, ani celów
+    if (this.stan === 'wyszli' || this.stan === 'cela') return;
+    if (!this.fenek || !this.programista) return;
 
     if (this.remcioszek && this.tecza) this.#remcioszek(dt);
     this.#pajaki(dt);
@@ -257,7 +276,7 @@ export class Swiat {
 
     if (this.remStan === 'goni') {
       this.remRuch.ustawCel(gx, gy);
-      this.remRuch.krok(dt, 3.5);
+      this.remRuch.krok(dt, 2.95);
       if (!widzi && odl > CELL * 3) {
         this.remBezTropu += dt;
         if (this.remBezTropu > 6) {
@@ -267,7 +286,12 @@ export class Swiat {
         }
       } else this.remBezTropu = 0;
 
-      if (odl < 1.9) { this.naZdarzenie?.('zlapana'); return; }
+      // Otarcie się nie liczy: musi utrzymać kontakt przez chwilę.
+      // Bez tego minięcie go w korytarzu kończyło grę bez szansy reakcji.
+      if (odl < 1.9) {
+        this.dotyk = (this.dotyk || 0) + dt;
+        if (this.dotyk > 0.35) { this.dotyk = 0; this.naZdarzenie?.('zlapana'); return; }
+      } else this.dotyk = 0;
     }
 
     this.remcioszek.ustaw(this.remRuch.poz.x, this.remRuch.poz.y);

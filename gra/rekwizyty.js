@@ -1,7 +1,7 @@
-import * as THREE from './lib/three.module.js?v=1793185890';
-import { GLTFLoader } from './lib/GLTFLoader.js?v=1793185890';
-import { mergeGeometries } from './lib/BufferGeometryUtils.js?v=1793185890';
-import { CELL } from './gra.js?v=1793185890';
+import * as THREE from './lib/three.module.js?v=1793188105';
+import { GLTFLoader } from './lib/GLTFLoader.js?v=1793188105';
+import { mergeGeometries } from './lib/BufferGeometryUtils.js?v=1793188105';
+import { CELL } from './gra.js?v=1793188105';
 
 /* Modele wstawiane do labiryntu. Każdy wczytywany raz i powielany przez
    klonowanie, bo kopia dzieli geometrię i teksturę z oryginałem i nie
@@ -142,20 +142,29 @@ export class Rekwizyty {
      Model wstawiany jako dekoracja w komórkach, w których i tak nie ma
      ścian wewnętrznych. Kolizje zostają te labiryntowe, więc nie da się
      utknąć w meblach.                                                   */
-  async wnetrze(sciezka, { x, y, bok = 2, wysokosc = 3.0, obrot = 0, podniesienie = 0 } = {}) {
+  /* Model wnętrza skalowany tak, by jego ściany objęły pomieszczenie,
+     a gracz stał w środku, a nie oglądał makietę z zewnątrz. */
+  async wnetrze(sciezka, { srodek, szerokosc, obrot = 0, podniesienie = 0 } = {}) {
     const wzor = await model(sciezka);
     const egz = wzor.clone(true);
-    dopasuj(egz, wysokosc);
-    const srodek = {
-      x: x * CELL + (bok * CELL) / 2,
-      z: y * CELL + (bok * CELL) / 2
-    };
-    egz.position.x = srodek.x;
-    egz.position.z = srodek.z;
-    egz.position.y += podniesienie;
+
+    const bryla = new THREE.Box3().setFromObject(egz);
+    const r = bryla.getSize(new THREE.Vector3());
+    const skala = szerokosc / (r.x || 1);
+    egz.scale.setScalar(skala);
+
+    const po = new THREE.Box3().setFromObject(egz);
+    const sr = po.getCenter(new THREE.Vector3());
+    egz.position.x += srodek.x - sr.x;
+    egz.position.z += srodek.z - sr.z;
+    egz.position.y += -po.min.y + podniesienie;
     egz.rotation.y = obrot;
+
     this.grupa.add(egz);
-    return egz;
+    const koncowa = new THREE.Box3().setFromObject(egz);
+    return { obiekt: egz,
+             rozmiar: koncowa.getSize(new THREE.Vector3()),
+             srodek: koncowa.getCenter(new THREE.Vector3()) };
   }
 
   /* Beczki budowane z brył. Model z generatora miał 137 tysięcy trójkątów

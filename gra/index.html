@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,600;1,400&family=Oswald:wght@300;400&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styl.css?v=1793185890">
+<link rel="stylesheet" href="styl.css?v=1793188105">
 <script>
 /* Łapacz awarii: bez tego błąd w module daje tylko czarny ekran
    i nie wiadomo, czy gra się zawiesiła, czy jeszcze wczytuje. */
@@ -64,15 +64,17 @@
   <div class="zawartosc"></div>
 </div>
 
+<div id="minigra"></div>
 <div id="kurtyna"></div>
 <div class="nakladka" id="ekran"></div>
 
 <script type="module">
-import { Gra, CELL } from './gra.js?v=1793185890';
-import { UI } from './ui.js?v=1793185890';
-import { Dzwiek } from './dzwiek.js?v=1793185890';
-import { Swiat } from './swiat.js?v=1793185890';
-import { Rekwizyty } from './rekwizyty.js?v=1793185890';
+import { Gra, CELL } from './gra.js?v=1793188105';
+import { UI } from './ui.js?v=1793188105';
+import { Dzwiek } from './dzwiek.js?v=1793188105';
+import { Swiat } from './swiat.js?v=1793188105';
+import { Rekwizyty } from './rekwizyty.js?v=1793188105';
+import { ratujFenka, jumpscare } from './minigry.js?v=1793188105';
 
 const gra = new Gra(document.getElementById('plotno'));
 const dzwiek = new Dzwiek();
@@ -234,23 +236,20 @@ start.addEventListener('click', async () => {
   UI.hud(true);
   UI.cel('Znajdź drogę w głąb');
   await swiat.zaladuj();
-  swiat.rozpocznij();
-  rekwizyty.pochodnieNaScianach(16).catch(e => console.warn('pochodnie:', e.message));
-  rekwizyty.drobiazgi(14);
-  rekwizyty.wnetrze('modele/sala.glb', { x: 0, y: 0, bok: 2, wysokosc: 3.9, obrot: Math.PI })
-    .catch(e => console.warn('sala:', e.message));
   const poprzedni = gra.naTik;
-  gra.naTik = (dt) => { poprzedni(dt); pilnujWyjscia(); };
+  gra.naTik = (dt) => { poprzedni(dt); pilnujWyjscia(); pilnujWyjsciaZCeli(); };
   gra.start();
-  await UI.odsloń(700);
-  await UI.szept('Za tobą zamknęły się drzwi.');
+  await celaStartowa();
 }, { once: true });
 
 /* ─────────────── świat: postacie, pościg, cele ─────────────── */
 const swiat = new Swiat(gra, dzwiek, UI);
 const rekwizyty = new Rekwizyty(gra);
 gra.naTik = (dt) => { swiat.tik(dt); rekwizyty.tik(gra.czas); };
-gra.naStukniecie = () => swiat.uzyj();
+gra.naStukniecie = () => {
+  if (czekaNaWyjscie) { doLabiryntu(); return true; }
+  return swiat.uzyj();
+};
 
 const KWESTIE = {
   programista: [
@@ -261,7 +260,7 @@ const KWESTIE = {
 };
 let ktoraKwestia = 0;
 
-swiat.naZdarzenie = async (co) => {
+swiat.naZdarzenie = async (co, szczegol) => {
   if (co === 'programista') {
     const t = KWESTIE.programista[ktoraKwestia % KWESTIE.programista.length];
     ktoraKwestia++;
@@ -279,9 +278,7 @@ swiat.naZdarzenie = async (co) => {
     return;
   }
   if (co === 'pajak') {
-    dzwiek.zlapanie();
-    UI.uderzenie();
-    UI.szept('Coś przebiegło Ci po nodze.', 1600);
+    await spotkanieZPajakiem(szczegol);
     return;
   }
   if (co === 'zamkniete') {
@@ -296,6 +293,87 @@ swiat.naZdarzenie = async (co) => {
     await smierc();
   }
 };
+
+/* ─────────────── cela startowa ─────────────── */
+let wCeli = false, celaGotowa = false;
+async function celaStartowa() {
+  wCeli = true; celaGotowa = false;
+  gra.zamrozony = true;
+  swiat.stan = 'cela';
+  UI.hud(false);
+  const pokoj = gra.zbudujPokoj(2, 'loch', 3);
+  const wnetrzeSali = await rekwizyty.wnetrze('modele/sala.glb', {
+    srodek: { x: pokoj.srodek.x, z: 2.6 },
+    szerokosc: pokoj.bok - 0.3
+  }).catch(e => { console.warn('sala:', e.message); return null; });
+
+  // gracz stoi tuż przed otwartą stroną dioramy i patrzy w jej wnętrze;
+  // wyjście zostaje za plecami, w głębi pomieszczenia
+  const glebSali = wnetrzeSali ? wnetrzeSali.rozmiar.z : 4.4;
+  gra.pozycja.set(pokoj.srodek.x, 1.62, 2.6 + glebSali / 2 + 1.6);
+  gra.obrot.y = 0; gra.obrot.x = -0.02;
+  gra.zamrozony = false;
+
+  await UI.odsloń(900);
+  // sterowanie oddajemy od razu: szepty lecą w tle, a nie zamiast gry
+  UI.cel('Wyjdź z celi');
+  UI.hud(true);
+  celaGotowa = true;
+  (async () => {
+    await UI.szept('Obudziłaś się w celi.', 2200);
+    if (wCeli) await UI.szept('Fenka tu nie ma. Wyjście jest za tobą.', 2400);
+  })();
+}
+
+/* wyjście z celi: tyłem, przez mur za plecami */
+function pilnujWyjsciaZCeli() {
+  if (!wCeli || !celaGotowa || gra.zamrozony) return;
+  const g = gra.lab.h * 4;
+  if (gra.pozycja.z > g - 2.2) {
+    UI.podpowiedz('Wyjdź do korytarza');
+    czekaNaWyjscie = true;
+  } else { UI.podpowiedz(''); czekaNaWyjscie = false; }
+}
+let czekaNaWyjscie = false;
+
+async function doLabiryntu() {
+  wCeli = false; celaGotowa = false; czekaNaWyjscie = false;
+  gra.zamrozony = true;
+  UI.podpowiedz('');
+  dzwiek.otwarcie();
+  await UI.zaslon(700);
+  rekwizyty.usun();
+  gra.zbuduj(22, 22, 20261028);
+  swiat.rozpocznij();
+  rekwizyty.pochodnieNaScianach(16).catch(e => console.warn('pochodnie:', e.message));
+  rekwizyty.drobiazgi(14);
+  UI.hud(true);
+  gra.zamrozony = false;
+  await UI.odsloń(800);
+  await UI.szept('Za tobą zamknęły się drzwi.', 2300);
+}
+
+/* ─────────────── pająk: najpierw skok, potem ratowanie Fenka ─────────────── */
+let wTrakciePajaka = false;
+async function spotkanieZPajakiem(pajak) {
+  if (wTrakciePajaka || wTrakcieSmierci) return;
+  wTrakciePajaka = true;
+  UI.podpowiedz('');
+  if (pajak) await jumpscare(gra, pajak, dzwiek, 850);
+  gra.zamrozony = true;
+  dzwiek.napiecie(0);
+
+  let wygrana = false;
+  while (!wygrana) {
+    wygrana = await ratujFenka(dzwiek);
+    if (!wygrana) {
+      await UI.szept('Dopadły go. Jeszcze raz.', 1700);
+    }
+  }
+  await UI.szept('Strząsnęłaś je wszystkie.', 1900);
+  gra.zamrozony = false;
+  wTrakciePajaka = false;
+}
 
 /* ─────────────── śmierć i restart ─────────────── */
 let wTrakcieSmierci = false;
@@ -327,6 +405,7 @@ async function smierc() {
     rekwizyty.usun();
     swiat.rozpocznij();
     rekwizyty.pochodnieNaScianach(16).catch(e => console.warn('pochodnie:', e.message));
+    rekwizyty.drobiazgi(14);
     UI.hud(true);
     gra.zamrozony = false;
     wTrakcieSmierci = false;

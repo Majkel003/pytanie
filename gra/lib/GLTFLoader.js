@@ -64,8 +64,8 @@ import {
 	VectorKeyframeTrack,
 	SRGBColorSpace,
 	InstancedBufferAttribute
-} from './three.module.js?v=1793185890';
-import { toTrianglesDrawMode } from './BufferGeometryUtils.js?v=1793185890';
+} from './three.module.js?v=1793188105';
+import { toTrianglesDrawMode } from './BufferGeometryUtils.js?v=1793188105';
 
 class GLTFLoader extends Loader {
 

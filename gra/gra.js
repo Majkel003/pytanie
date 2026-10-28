@@ -1,5 +1,5 @@
-import * as THREE from './lib/three.module.js?v=1793185890';
-import { Labirynt, N, E, S, W } from './labirynt.js?v=1793185890';
+import * as THREE from './lib/three.module.js?v=1793188105';
+import { Labirynt, N, E, S, W } from './labirynt.js?v=1793188105';
 
 /* ───────────────── wymiary świata ───────────────── */
 export const CELL = 4;        // bok komórki labiryntu
@@ -156,7 +156,13 @@ export class Gra {
 
   /* Biały pokój za drzwiami: ta sama maszyneria, ale bez mgły, bez pochodni
      i bez zagrożenia. Po ciemnym labiryncie ma uderzyć kontrastem. */
-  zbudujBialyPokoj(bok = 5) {
+  zbudujBialyPokoj(bok = 5) { return this.zbudujPokoj(bok, 'bialy'); }
+
+  /* Osobne pomieszczenie, nie wycinek labiryntu: cztery ściany, podłoga,
+     sufit i kolizje po obwodzie. Model wnętrza wstawia się do środka,
+     więc jego własne mury nie biją się z murami labiryntu.             */
+  zbudujPokoj(bok = 5, styl = 'bialy', gleb = null) {
+    const glebokosc = gleb || bok;
     if (this.grupa) {
       this.scena.remove(this.grupa);
       this.grupa.traverse(o => {
@@ -167,16 +173,19 @@ export class Gra {
     this.grupa = new THREE.Group();
     this.scena.add(this.grupa);
 
-    this.lab = new Labirynt(bok, bok, 1);
-    for (let y = 0; y < bok; y++) for (let x = 0; x < bok; x++) {
+    this.lab = new Labirynt(bok, glebokosc, 1);
+    for (let y = 0; y < glebokosc; y++) for (let x = 0; x < bok; x++) {
       if (x < bok - 1) this.lab.usun(x, y, E);
-      if (y < bok - 1) this.lab.usun(x, y, S);
+      if (y < glebokosc - 1) this.lab.usun(x, y, S);
     }
-    this.odwiedzone = new Uint8Array(bok * bok).fill(1);
+    this.odwiedzone = new Uint8Array(bok * glebokosc).fill(1);
     this.wyjscie = null; this.punktWyjscia = null; this.blokadaWyjscia = [];
 
+    const ciemno = (styl === 'loch');
     const sciany = this.lab.sciany(CELL, GRUBOSC);
-    const bialy = new THREE.MeshLambertMaterial({ color: 0xf4f1ea });
+    const bialy = ciemno
+      ? new THREE.MeshLambertMaterial({ map: teksturaSciany() })
+      : new THREE.MeshLambertMaterial({ color: 0xf4f1ea });
     const n = sciany.length;
     const poz = new Float32Array(n * 24 * 3), nor = new Float32Array(n * 24 * 3);
     const ind = new Uint32Array(n * 36);
@@ -196,34 +205,47 @@ export class Gra {
     this.grupa.add(new THREE.Mesh(geo, bialy));
     this.#kubelkiKolizji(sciany);
 
-    const W = bok * CELL;
-    const podloga = new THREE.Mesh(new THREE.PlaneGeometry(W, W),
-      new THREE.MeshLambertMaterial({ color: 0xeae6dc }));
+    const W = bok * CELL, G = glebokosc * CELL;
+    const matPodlogi = ciemno
+      ? new THREE.MeshLambertMaterial({ map: (() => { const t = teksturaPodlogi();
+          t.repeat.set(W / SKALA_TEX, G / SKALA_TEX); return t; })() })
+      : new THREE.MeshLambertMaterial({ color: 0xeae6dc });
+    const podloga = new THREE.Mesh(new THREE.PlaneGeometry(W, G), matPodlogi);
     podloga.rotation.x = -Math.PI / 2;
-    podloga.position.set(W / 2, 0, W / 2);
+    podloga.position.set(W / 2, 0, G / 2);
     this.grupa.add(podloga);
 
-    const sufit = new THREE.Mesh(new THREE.PlaneGeometry(W, W),
-      new THREE.MeshLambertMaterial({ color: 0xffffff }));
+    const sufit = new THREE.Mesh(new THREE.PlaneGeometry(W, G),
+      new THREE.MeshLambertMaterial({ color: ciemno ? 0x2a2630 : 0xffffff }));
     sufit.rotation.x = Math.PI / 2;
-    sufit.position.set(W / 2, WYSOKOSC + 1.4, W / 2);
+    sufit.position.set(W / 2, WYSOKOSC + 1.4, G / 2);
     this.grupa.add(sufit);
 
-    // światło rozproszone zamiast pochodni
-    this.scena.fog = null;
-    this.scena.background = new THREE.Color(0xf4f1ea);
-    this.otoczenie.color.set(0xffffff);
-    this.otoczenie.intensity = 2.6;
-    this.latarka.intensity = 0;
-    this.mocLatarki = 0;
-    const gora = new THREE.PointLight(0xfff6e6, 60, 44, 1.1);
-    gora.position.set(W / 2, WYSOKOSC + 0.6, W / 2);
-    this.grupa.add(gora);
+    if (ciemno) {
+      this.scena.fog = new THREE.FogExp2(0x0b0a10, 0.03);
+      this.scena.background = new THREE.Color(0x0b0a10);
+      this.otoczenie.color.set(0x5c6680);
+      this.otoczenie.intensity = 1.1;
+      this.mocLatarki = 14;
+      const ognisko = new THREE.PointLight(0xffb45a, 26, 22, 1.3);
+      ognisko.position.set(W / 2, 2.4, G / 2);
+      this.grupa.add(ognisko);
+    } else {
+      // światło rozproszone zamiast pochodni
+      this.scena.fog = null;
+      this.scena.background = new THREE.Color(0xf4f1ea);
+      this.otoczenie.color.set(0xffffff);
+      this.otoczenie.intensity = 2.6;
+      this.latarka.intensity = 0;
+      this.mocLatarki = 0;
+      const gora = new THREE.PointLight(0xfff6e6, 60, 44, 1.1);
+      gora.position.set(W / 2, WYSOKOSC + 0.6, G / 2);
+      this.grupa.add(gora);
+    }
 
-    this.pozycja.set(W / 2, WZROST, W - CELL * 0.8);
-    this.obrot.set ? null : null;
+    this.pozycja.set(W / 2, WZROST, G - CELL * 0.75);
     this.obrot.x = 0; this.obrot.y = Math.PI;
-    return { bok: W };
+    return { bok: W, glebokosc: G, srodek: { x: W / 2, z: G / 2 } };
   }
 
   /* Yaw w pierwszą stronę, w którą z tej komórki da się wyjść:

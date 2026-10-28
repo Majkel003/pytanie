@@ -267,3 +267,58 @@ body.potrzasniety #plotno { animation: drzenie .42s ease; }
   font-family: 'EB Garamond', serif; font-style: italic;
   color: #7d7568; text-align: center; padding: 18px 0 8px; font-size: 15px;
 }
+
+/* ─────────────────── minigierki ─────────────────── */
+#minigra {
+  position: fixed; inset: 0; z-index: 44;
+  display: none; flex-direction: column;
+  background: radial-gradient(ellipse at center, #1b1620 0%, #08070b 75%);
+  padding: calc(16px + env(safe-area-inset-top)) 14px calc(16px + env(safe-area-inset-bottom));
+}
+#minigra.wlaczona { display: flex; animation: rozjasnienie .35s ease both; }
+
+.mgpasek {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 12px; flex: 0 0 auto;
+}
+.mgcel {
+  font-size: 11px; letter-spacing: .22em; text-transform: uppercase;
+  color: var(--zloto);
+}
+.mgzycia { font-size: 16px; color: var(--czerwien); letter-spacing: .18em; }
+
+.mgarena {
+  position: relative; flex: 1 1 auto; overflow: hidden;
+  border: 1px solid rgba(201,162,74,.26); border-radius: 4px;
+  background: radial-gradient(ellipse at center, rgba(201,162,74,.09) 0%, rgba(0,0,0,0) 65%);
+  touch-action: none;
+}
+.mgarena.trafiony { animation: drzenie .32s ease; box-shadow: inset 0 0 0 2px rgba(168,64,47,.75); }
+
+.mgfenek {
+  position: absolute; left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  height: 38%; max-height: 240px; width: auto;
+  pointer-events: none;
+  filter: drop-shadow(0 0 16px rgba(201,162,74,.35));
+}
+
+.mgpajak {
+  position: absolute; left: 0; top: 0;
+  width: 38px; height: 38px; margin: -19px 0 0 -19px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 27px; line-height: 1;
+  cursor: pointer; touch-action: none; will-change: transform;
+  text-shadow: 0 0 10px rgba(0,0,0,.8);
+}
+.mgpajak.zgnieciony {
+  animation: zgniecenie .26s ease forwards; pointer-events: none;
+}
+@keyframes zgniecenie {
+  to { transform: scale(.25) rotate(140deg); opacity: 0; }
+}
+
+.mglicznik {
+  position: absolute; left: 10px; bottom: 8px;
+  font-size: 11px; letter-spacing: .18em; color: rgba(201,162,74,.8);
+}
