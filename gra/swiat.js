@@ -1,8 +1,8 @@
-import * as THREE from './lib/three.module.js?v=1793191130';
-import { Postac, wczytajSprite } from './postacie.js?v=1793191130';
-import { Pajak } from './pajak.js?v=1793191130';
-import { CELL } from './gra.js?v=1793191130';
-import { N, E, S, W } from './labirynt.js?v=1793191130';
+import * as THREE from './lib/three.module.js?v=1793201601';
+import { Postac, wczytajSprite } from './postacie.js?v=1793201601';
+import { Pajak } from './pajak.js?v=1793201601';
+import { CELL } from './gra.js?v=1793201601';
+import { N, E, S, W } from './labirynt.js?v=1793201601';
 
 /* Logika świata: kto gdzie stoi, kto za kim chodzi, kiedy otwiera się wyjście.
    Silnik (gra.js) nie wie nic o fabule, a to tutaj nie dotyka renderowania. */

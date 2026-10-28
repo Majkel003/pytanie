@@ -1,4 +1,4 @@
-import * as THREE from './lib/three.module.js?v=1793191130';
+import * as THREE from './lib/three.module.js?v=1793201601';
 
 /* Postacie są wycinankami zwróconymi do kamery, ale nie płaskimi naklejkami:
    każda dostaje ciemny obrys z tyłu (jak tekturowy standee), miękki cień na

@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,600;1,400&family=Oswald:wght@300;400&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styl.css?v=1793191130">
+<link rel="stylesheet" href="styl.css?v=1793201601">
 <script>
 /* Łapacz awarii: bez tego błąd w module daje tylko czarny ekran
    i nie wiadomo, czy gra się zawiesiła, czy jeszcze wczytuje. */
@@ -23,7 +23,10 @@
       '\n\nSpróbuj odświeżyć z pominięciem pamięci podręcznej.';
   }
   addEventListener('error', function (e) {
-    pokaz((e.message || 'błąd wczytywania') + '\n' + (e.filename || '') + ':' + (e.lineno || ''));
+    var cel = e.target && e.target.src ? ('\nzasób: ' + e.target.src) : '';
+    var szczegol = e.error && e.error.stack ? ('\n' + e.error.stack) : '';
+    pokaz((e.message || 'błąd wczytywania') +
+          '\n' + (e.filename || '-') + ':' + (e.lineno || '-') + cel + szczegol);
   }, true);
   addEventListener('unhandledrejection', function (e) {
     pokaz('Nieobsłużony błąd: ' + (e.reason && e.reason.message ? e.reason.message : e.reason));
@@ -70,12 +73,12 @@
 <div class="nakladka" id="ekran"></div>
 
 <script type="module">
-import { Gra, CELL } from './gra.js?v=1793191130';
-import { UI } from './ui.js?v=1793191130';
-import { Dzwiek } from './dzwiek.js?v=1793191130';
-import { Swiat } from './swiat.js?v=1793191130';
-import { Rekwizyty } from './rekwizyty.js?v=1793191130';
-import { ratujFenka, jumpscare, kielbasa } from './minigry.js?v=1793191130';
+import { Gra, CELL } from './gra.js?v=1793201601';
+import { UI } from './ui.js?v=1793201601';
+import { Dzwiek } from './dzwiek.js?v=1793201601';
+import { Swiat } from './swiat.js?v=1793201601';
+import { Rekwizyty } from './rekwizyty.js?v=1793201601';
+import { ratujFenka, jumpscare, kielbasa } from './minigry.js?v=1793201601';
 
 const gra = new Gra(document.getElementById('plotno'));
 const dzwiek = new Dzwiek();
@@ -228,19 +231,49 @@ async function pilnujDzwieku() {
   return false;
 }
 
+/* Wejście do gry nie może zależeć od niczego, co wolno zawieść:
+   dźwięk bywa blokowany przez przeglądarkę, a modele i zdjęcia mogą się
+   nie dociągnąć. Każdy taki krok jest osobno zabezpieczony, a prawdziwy
+   błąd trafia na ekran zamiast gasnąć w pustce. */
+function opisBledu(e) {
+  if (!e) return 'nieznany błąd';
+  return (e.message || String(e)) + (e.stack ? '\n' + e.stack : '');
+}
+
 start.addEventListener('click', async () => {
-  await dzwiek.odblokuj();          // musi paść w geście, inaczej Safari milczy
-  dzwiek.start();
-  pilnujDzwieku();
-  await UI.zaslon(420);
-  UI.ukryjNakladke('ekran');
-  UI.hud(true);
-  UI.cel('Znajdź drogę w głąb');
-  await swiat.zaladuj();
-  const poprzedni = gra.naTik;
-  gra.naTik = (dt) => { poprzedni(dt); pilnujWyjscia(); pilnujWyjsciaZCeli(); };
-  gra.start();
-  await celaStartowa();
+  try {
+    try {
+      await dzwiek.odblokuj();
+      dzwiek.start();
+      pilnujDzwieku();
+    } catch (e) {
+      console.warn('dźwięk:', e);
+      UI.podpowiedz('Dźwięk niedostępny');
+      setTimeout(() => UI.podpowiedz(''), 2500);
+    }
+
+    await UI.zaslon(420);
+    UI.ukryjNakladke('ekran');
+    UI.hud(true);
+    UI.cel('Znajdź drogę w głąb');
+
+    try {
+      await swiat.zaladuj();
+    } catch (e) {
+      throw new Error('nie wczytano postaci: ' + opisBledu(e));
+    }
+
+    const poprzedni = gra.naTik;
+    gra.naTik = (dt) => { poprzedni(dt); pilnujWyjscia(); pilnujWyjsciaZCeli(); };
+    gra.start();
+    await celaStartowa();
+  } catch (e) {
+    const el = document.getElementById('awaria');
+    el.style.cssText = 'position:fixed;inset:0;z-index:90;padding:26px;overflow:auto;' +
+      'background:#0b0a10;color:#e8e2d6;font:13px/1.6 ui-monospace,monospace;white-space:pre-wrap';
+    el.textContent = 'Gra się nie uruchomiła.\n\n' + opisBledu(e) +
+      '\n\nPokaż ten ekran Michałowi.';
+  }
 }, { once: true });
 
 /* ─────────────── świat: postacie, pościg, cele ─────────────── */
