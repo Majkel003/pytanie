@@ -1,5 +1,5 @@
-import * as THREE from './lib/three.module.js?v=1793188105';
-import { Labirynt, N, E, S, W } from './labirynt.js?v=1793188105';
+import * as THREE from './lib/three.module.js?v=1793189264';
+import { Labirynt, N, E, S, W } from './labirynt.js?v=1793189264';
 
 /* ───────────────── wymiary świata ───────────────── */
 export const CELL = 4;        // bok komórki labiryntu
@@ -455,6 +455,26 @@ export class Gra {
       }
     }
     return dotyk;
+  }
+
+  /* Przeszkoda dostawiana do kolizji poza murami labiryntu: stoisko,
+     które blokuje korytarz do czasu rozwiązania zagadki. */
+  dodajPrzeszkode(a) {
+    const cx0 = Math.floor(a.x0 / CELL), cx1 = Math.floor(a.x1 / CELL);
+    const cz0 = Math.floor(a.z0 / CELL), cz1 = Math.floor(a.z1 / CELL);
+    for (let cz = cz0; cz <= cz1; cz++) for (let cx = cx0; cx <= cx1; cx++) {
+      const k = cz * this.lab.w + cx;
+      if (!this.kubelki.has(k)) this.kubelki.set(k, []);
+      this.kubelki.get(k).push(a);
+    }
+    return a;
+  }
+
+  usunPrzeszkode(a) {
+    for (const [, lista] of this.kubelki) {
+      const i = lista.indexOf(a);
+      if (i >= 0) lista.splice(i, 1);
+    }
   }
 
   komorka(v = this.pozycja) {

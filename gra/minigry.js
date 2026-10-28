@@ -157,3 +157,114 @@ export function jumpscare(gra, pajak, dzwiek, ms = 900) {
     }, ms);
   });
 }
+
+/* ─────────── Kiełbasa: pokrój i usmaż ───────────
+   Dwa etapy. Najpierw cięcia w zaznaczonych miejscach, potem przewracanie
+   plastrów dokładnie wtedy, gdy się zarumienią. Za wcześnie jest surowe,
+   za późno robi się węgiel i plaster trzeba usmażyć od nowa.            */
+export function kielbasa(dzwiek, { ciec = 5, doUsmazenia = 5 } = {}) {
+  return new Promise(resolve => {
+    const nakladka = $('minigra');
+    let koniec = false;
+    const czasomierze = [];
+    const sprzataj = () => czasomierze.forEach(t => clearTimeout(t));
+    const zakoncz = (w) => {
+      if (koniec) return;
+      koniec = true; sprzataj();
+      nakladka.classList.remove('wlaczona');
+      nakladka.innerHTML = '';
+      resolve(w);
+    };
+
+    /* ── etap 1: krojenie ── */
+    function krojenie() {
+      nakladka.innerHTML =
+        '<div class="mgpasek"><span class="mgcel">Pokrój kiełbasę</span>' +
+        '<span class="mgzycia" id="kbLicz">0 / ' + ciec + '</span></div>' +
+        '<div class="mgarena kbarena"><div class="kbwalek" id="kbwalek"></div></div>';
+      nakladka.classList.add('wlaczona');
+
+      const walek = $('kbwalek');
+      let zrobione = 0;
+      for (let i = 1; i <= ciec; i++) {
+        const m = document.createElement('div');
+        m.className = 'kbciecie';
+        m.style.left = (i * 100 / (ciec + 1)) + '%';
+        m.addEventListener('pointerdown', ev => {
+          ev.preventDefault();
+          if (koniec || m.classList.contains('zrobione')) return;
+          m.classList.add('zrobione');
+          dzwiek?.stuk();
+          zrobione++;
+          $('kbLicz').textContent = zrobione + ' / ' + ciec;
+          if (zrobione >= ciec) {
+            dzwiek?.zdobycz();
+            czasomierze.push(setTimeout(smazenie, 650));
+          }
+        });
+        walek.appendChild(m);
+      }
+    }
+
+    /* ── etap 2: smażenie ── */
+    function smazenie() {
+      if (koniec) return;
+      nakladka.innerHTML =
+        '<div class="mgpasek"><span class="mgcel">Przewróć, gdy się zarumieni</span>' +
+        '<span class="mgzycia" id="kbLicz">0 / ' + doUsmazenia + '</span></div>' +
+        '<div class="mgarena kbgrill" id="kbgrill"></div>';
+
+      const grill = $('kbgrill');
+      let gotowe = 0;
+      const plastry = [];
+
+      for (let i = 0; i < doUsmazenia; i++) {
+        const el = document.createElement('div');
+        el.className = 'kbplaster surowy';
+        el.style.left = (8 + (i % 3) * 30) + '%';
+        el.style.top = (14 + Math.floor(i / 3) * 34) + '%';
+        // każdy plaster smaży się własnym tempem, żeby nie dojrzewały razem
+        const p = { el, postep: -Math.random() * 0.5, tempo: 0.22 + Math.random() * 0.1, gotowy: false };
+        el.addEventListener('pointerdown', ev => {
+          ev.preventDefault();
+          if (koniec || p.gotowy) return;
+          if (p.postep >= 1 && p.postep <= 1.9) {
+            p.gotowy = true;
+            el.className = 'kbplaster gotowy';
+            dzwiek?.zdobycz();
+            gotowe++;
+            $('kbLicz').textContent = gotowe + ' / ' + doUsmazenia;
+            if (gotowe >= doUsmazenia) { dzwiek?.otwarcie(); zakoncz(true); }
+          } else {
+            // za wcześnie albo za późno: plaster wraca na patelnię
+            p.postep = -0.3;
+            el.classList.add('pudlo');
+            dzwiek?.stuk();
+            czasomierze.push(setTimeout(() => el.classList.remove('pudlo'), 300));
+          }
+        });
+        grill.appendChild(el);
+        plastry.push(p);
+      }
+
+      let ostatni = performance.now();
+      (function klatka(teraz) {
+        if (koniec) return;
+        requestAnimationFrame(klatka);
+        const dt = Math.min((teraz - ostatni) / 1000, 0.05);
+        ostatni = teraz;
+        for (const p of plastry) {
+          if (p.gotowy) continue;
+          p.postep += p.tempo * dt;
+          if (p.postep > 2.8) p.postep = -0.3;          // spalony wraca surowy
+          const k = p.el.classList;
+          k.toggle('surowy',   p.postep < 1);
+          k.toggle('zloty',    p.postep >= 1 && p.postep <= 1.9);
+          k.toggle('spalony',  p.postep > 1.9);
+        }
+      })(ostatni);
+    }
+
+    krojenie();
+  });
+}

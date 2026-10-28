@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,600;1,400&family=Oswald:wght@300;400&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styl.css?v=1793188105">
+<link rel="stylesheet" href="styl.css?v=1793189264">
 <script>
 /* Łapacz awarii: bez tego błąd w module daje tylko czarny ekran
    i nie wiadomo, czy gra się zawiesiła, czy jeszcze wczytuje. */
@@ -69,12 +69,12 @@
 <div class="nakladka" id="ekran"></div>
 
 <script type="module">
-import { Gra, CELL } from './gra.js?v=1793188105';
-import { UI } from './ui.js?v=1793188105';
-import { Dzwiek } from './dzwiek.js?v=1793188105';
-import { Swiat } from './swiat.js?v=1793188105';
-import { Rekwizyty } from './rekwizyty.js?v=1793188105';
-import { ratujFenka, jumpscare } from './minigry.js?v=1793188105';
+import { Gra, CELL } from './gra.js?v=1793189264';
+import { UI } from './ui.js?v=1793189264';
+import { Dzwiek } from './dzwiek.js?v=1793189264';
+import { Swiat } from './swiat.js?v=1793189264';
+import { Rekwizyty } from './rekwizyty.js?v=1793189264';
+import { ratujFenka, jumpscare, kielbasa } from './minigry.js?v=1793189264';
 
 const gra = new Gra(document.getElementById('plotno'));
 const dzwiek = new Dzwiek();
@@ -261,6 +261,18 @@ const KWESTIE = {
 let ktoraKwestia = 0;
 
 swiat.naZdarzenie = async (co, szczegol) => {
+  if (co === 'stoisko-postawione') {
+    // model dostawiany po rozstawieniu, bo wczytuje się w tle
+    rekwizyty.wnetrze('modele/stragan.glb', {
+      srodek: szczegol.srodek, szerokosc: 3.1
+    }).then(r => { szczegol.model = r.obiekt; })
+      .catch(e => console.warn('stragan:', e.message));
+    return;
+  }
+  if (co === 'stoisko') {
+    await przyStoisku();
+    return;
+  }
   if (co === 'programista') {
     const t = KWESTIE.programista[ktoraKwestia % KWESTIE.programista.length];
     ktoraKwestia++;
@@ -293,6 +305,27 @@ swiat.naZdarzenie = async (co, szczegol) => {
     await smierc();
   }
 };
+
+/* ─────────────── stoisko z kiełbasą ─────────────── */
+let wTrakcieStoiska = false;
+async function przyStoisku() {
+  if (wTrakcieStoiska) return;
+  wTrakcieStoiska = true;
+  UI.podpowiedz('');
+  gra.zamrozony = true;
+  dzwiek.napiecie(0);
+  await UI.szept('Stoisko blokuje przejście. Ktoś musi się tym zająć.', 2000);
+
+  let wygrana = false;
+  while (!wygrana) {
+    wygrana = await kielbasa(dzwiek);
+    if (!wygrana) await UI.szept('Jeszcze raz.', 1400);
+  }
+  swiat.rozwiazStoisko();
+  await UI.szept('Przejście wolne. Fenek by to docenił.', 2100);
+  gra.zamrozony = false;
+  wTrakcieStoiska = false;
+}
 
 /* ─────────────── cela startowa ─────────────── */
 let wCeli = false, celaGotowa = false;

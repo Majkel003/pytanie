@@ -35,7 +35,8 @@ export const UI = {
   /* ─────── podpowiedź przy obiekcie („stuknij, żeby…") ─────── */
   podpowiedz(tekst) {
     const el = $('podpowiedz');
-    if (!tekst) { el.classList.remove('widoczna'); return; }
+    // tekst czyścimy razem z ukryciem, inaczej zostaje nieaktualny napis
+    if (!tekst) { el.classList.remove('widoczna'); el.textContent = ''; return; }
     el.textContent = tekst;
     el.classList.add('widoczna');
   },

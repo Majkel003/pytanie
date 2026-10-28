@@ -322,3 +322,43 @@ body.potrzasniety #plotno { animation: drzenie .42s ease; }
   position: absolute; left: 10px; bottom: 8px;
   font-size: 11px; letter-spacing: .18em; color: rgba(201,162,74,.8);
 }
+
+/* ─────────────────── minigierka z kiełbasą ─────────────────── */
+.kbarena { display: flex; align-items: center; justify-content: center; }
+.kbwalek {
+  position: relative; width: 84%; height: 74px; border-radius: 37px;
+  background: linear-gradient(180deg, #a85a3c 0%, #8a4028 45%, #6d3020 100%);
+  box-shadow: inset 0 -8px 14px rgba(0,0,0,.35), inset 0 6px 10px rgba(255,200,160,.18);
+}
+.kbciecie {
+  position: absolute; top: -14px; bottom: -14px; width: 42px; margin-left: -21px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; touch-action: none;
+}
+.kbciecie::before {
+  content: ''; width: 3px; height: 100%;
+  background: repeating-linear-gradient(180deg, rgba(242,234,216,.85) 0 7px, transparent 7px 14px);
+}
+.kbciecie.zrobione::before {
+  background: var(--zloto);
+  box-shadow: 0 0 10px rgba(201,162,74,.7);
+}
+
+.kbgrill {
+  background:
+    repeating-linear-gradient(90deg, rgba(60,60,66,.9) 0 6px, rgba(22,22,26,.95) 6px 26px),
+    radial-gradient(ellipse at center, rgba(190,70,20,.3) 0%, rgba(0,0,0,0) 70%);
+}
+.kbplaster {
+  position: absolute; width: 23%; aspect-ratio: 1; border-radius: 50%;
+  cursor: pointer; touch-action: none;
+  border: 3px solid rgba(0,0,0,.35);
+  transition: background .18s linear, box-shadow .18s linear, transform .16s ease;
+}
+.kbplaster.surowy  { background: radial-gradient(circle at 38% 34%, #d98a76, #a85a48); }
+.kbplaster.zloty   { background: radial-gradient(circle at 38% 34%, #e8ab52, #b4712a);
+                     box-shadow: 0 0 18px rgba(232,171,82,.75); }
+.kbplaster.spalony { background: radial-gradient(circle at 38% 34%, #4a3a30, #241c18); }
+.kbplaster.gotowy  { background: radial-gradient(circle at 38% 34%, #f0c173, #c98c3a);
+                     border-color: var(--zloto); transform: scale(.9); pointer-events: none; }
+.kbplaster.pudlo   { animation: drzenie .3s ease; }

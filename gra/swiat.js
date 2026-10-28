@@ -1,7 +1,8 @@
-import * as THREE from './lib/three.module.js?v=1793188105';
-import { Postac, wczytajSprite } from './postacie.js?v=1793188105';
-import { Pajak } from './pajak.js?v=1793188105';
-import { CELL } from './gra.js?v=1793188105';
+import * as THREE from './lib/three.module.js?v=1793189264';
+import { Postac, wczytajSprite } from './postacie.js?v=1793189264';
+import { Pajak } from './pajak.js?v=1793189264';
+import { CELL } from './gra.js?v=1793189264';
+import { N, E, S, W } from './labirynt.js?v=1793189264';
 
 /* Logika świata: kto gdzie stoi, kto za kim chodzi, kiedy otwiera się wyjście.
    Silnik (gra.js) nie wie nic o fabule, a to tutaj nie dotyka renderowania. */
@@ -155,6 +156,7 @@ export class Swiat {
     this.tecza.position.set(this.remRuch.poz.x, 1.7, this.remRuch.poz.y);
     gra.scena.add(this.tecza);
 
+    this.#postawStoisko(fx, fy);
     this.#rozstawPajaki(3);
 
     this.znacznikiNaMapie();
@@ -168,8 +170,16 @@ export class Swiat {
   #rozstawPajaki(ile) {
     const lab = this.gra.lab;
     this.pajaki = [];
+    const zajeta = this.stoisko ? this.stoisko.komorka : null;
     for (let i = 0; i < ile; i++) {
-      const k = lab.losoweDaleko(0, 0, 10) || this.zapasowePole(10);
+      let k = null;
+      // kilka podejść, żeby pająk nie wylądował w środku stoiska i nie utknął
+      for (let proba = 0; proba < 12; proba++) {
+        const kand = lab.losoweDaleko(0, 0, 10) || this.zapasowePole(10);
+        if (!kand) break;
+        if (zajeta && kand.x === zajeta[0] && kand.y === zajeta[1]) continue;
+        k = kand; break;
+      }
       if (!k) continue;
       const p = new Pajak(this.gra.scena, { skala: 0.62 });
       p.ustaw(k.x * CELL + CELL / 2, k.y * CELL + CELL / 2);
@@ -213,6 +223,52 @@ export class Swiat {
       if (p.ruch.kierunek !== undefined) p.model.zwrot(p.ruch.kierunek);
       p.model.animuj(dt, p.stan === 'biegnie' ? 3.1 : 1.5);
     }
+  }
+
+  /* Stoisko z kiełbasą zamykające korytarz w połowie drogi do Fenka.
+     Stawiamy je na trasie, żeby nie dało się go ominąć przypadkiem. */
+  #postawStoisko(fx, fy) {
+    const lab = this.gra.lab;
+    const pole = lab.odleglosci(fx, fy);
+    const trasa = [];
+    let cx = 0, cy = 0, n = 0;
+    while (!(cx === fx && cy === fy) && n < 600) {
+      trasa.push([cx, cy]);
+      const nast = lab.krok_do(cx, cy, pole);
+      if (!nast) break;
+      [cx, cy] = nast; n++;
+    }
+    window.__stoiskoDiag = { trasa: trasa.length, fx, fy, n };
+    if (trasa.length < 8) { this.stoisko = null; return; }
+
+    // mniej więcej w połowie, ale w komórce z dwiema ścianami, czyli
+    // w korytarzu, a nie na środku otwartej komnaty
+    let wybor = null;
+    for (let i = Math.floor(trasa.length * 0.4); i < Math.floor(trasa.length * 0.7); i++) {
+      const [x, y] = trasa[i];
+      if ([N, E, S, W].filter(k => lab.ma(x, y, k)).length >= 2) { wybor = [x, y]; break; }
+    }
+    if (!wybor) wybor = trasa[Math.floor(trasa.length / 2)];
+
+    const [sx2, sy2] = wybor;
+    const srodek = { x: sx2 * CELL + CELL / 2, z: sy2 * CELL + CELL / 2 };
+    this.stoisko = {
+      komorka: wybor, srodek, rozwiazane: false,
+      przeszkoda: this.gra.dodajPrzeszkode({
+        x0: srodek.x - 1.5, z0: srodek.z - 1.5,
+        x1: srodek.x + 1.5, z1: srodek.z + 1.5
+      }),
+      model: null
+    };
+    this.naZdarzenie?.('stoisko-postawione', this.stoisko);
+  }
+
+  rozwiazStoisko() {
+    if (!this.stoisko || this.stoisko.rozwiazane) return;
+    this.stoisko.rozwiazane = true;
+    this.gra.usunPrzeszkode(this.stoisko.przeszkoda);
+    if (this.stoisko.model) this.stoisko.model.visible = false;
+    this.dzwiek?.otwarcie();
   }
 
   znacznikiNaMapie() {
@@ -359,6 +415,17 @@ export class Swiat {
     }
     this.przyProgramiscie = false;
 
+    if (this.stoisko && !this.stoisko.rozwiazane) {
+      const d = Math.hypot(g.pozycja.x - this.stoisko.srodek.x,
+                           g.pozycja.z - this.stoisko.srodek.z);
+      if (d < 3.4) {
+        this.ui.podpowiedz('Zajmij się kiełbasą');
+        this.przyStoisku = true;
+        return;
+      }
+    }
+    this.przyStoisku = false;
+
     if (g.punktWyjscia && !g.wyjscieOtwarte && g.przyWyjsciu(2.8)) {
       if (this.fenekZabrany) {
         this.ui.podpowiedz('Otwórz drzwi');
@@ -375,11 +442,13 @@ export class Swiat {
     }
     this.przyDrzwiach = false;
     this.zamknieteDrzwi = false;
+    this.przyStoisku = false;
     this.ui.podpowiedz('');
   }
 
   /* ───────── reakcja na stuknięcie w ekran ───────── */
   uzyj() {
+    if (this.przyStoisku) { this.naZdarzenie?.('stoisko'); return true; }
     if (this.przyFenku) {
       this.fenekZabrany = true;
       this.dzwiek?.zdobycz();
