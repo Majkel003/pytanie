@@ -1,8 +1,8 @@
-import * as THREE from './lib/three.module.js?v=1793190371';
-import { Postac, wczytajSprite } from './postacie.js?v=1793190371';
-import { Pajak } from './pajak.js?v=1793190371';
-import { CELL } from './gra.js?v=1793190371';
-import { N, E, S, W } from './labirynt.js?v=1793190371';
+import * as THREE from './lib/three.module.js?v=1793191130';
+import { Postac, wczytajSprite } from './postacie.js?v=1793191130';
+import { Pajak } from './pajak.js?v=1793191130';
+import { CELL } from './gra.js?v=1793191130';
+import { N, E, S, W } from './labirynt.js?v=1793191130';
 
 /* Logika świata: kto gdzie stoi, kto za kim chodzi, kiedy otwiera się wyjście.
    Silnik (gra.js) nie wie nic o fabule, a to tutaj nie dotyka renderowania. */
@@ -299,8 +299,23 @@ export class Swiat {
 
     const [sx2, sy2] = wybor;
     const srodek = { x: sx2 * CELL + CELL / 2, z: sy2 * CELL + CELL / 2 };
+
+    /* Stoisko ma stać przodem do nadchodzącego gracza. Szukamy sąsiada
+       bliższego startowi i obracamy model w jego stronę. Model ma przód
+       w kierunku -Z, stąd atan2(-dx, -dz).                              */
+    const odStartu = lab.odleglosci(0, 0);
+    let podejscie = null, najblizej = Infinity;
+    for (const [k, dx, dz] of [[N, 0, -1], [E, 1, 0], [S, 0, 1], [W, -1, 0]]) {
+      if (lab.ma(sx2, sy2, k)) continue;
+      const nx = sx2 + dx, ny = sy2 + dz;
+      if (!lab.w_srodku(nx, ny)) continue;
+      const d = odStartu[ny * lab.w + nx];
+      if (d >= 0 && d < najblizej) { najblizej = d; podejscie = [dx, dz]; }
+    }
+    const obrot = podejscie ? Math.atan2(-podejscie[0], -podejscie[1]) : 0;
+
     this.stoisko = {
-      komorka: wybor, srodek, rozwiazane: false,
+      komorka: wybor, srodek, rozwiazane: false, obrot,
       przeszkoda: this.gra.dodajPrzeszkode({
         x0: srodek.x - 1.5, z0: srodek.z - 1.5,
         x1: srodek.x + 1.5, z1: srodek.z + 1.5

@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,600;1,400&family=Oswald:wght@300;400&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styl.css?v=1793190371">
+<link rel="stylesheet" href="styl.css?v=1793191130">
 <script>
 /* Łapacz awarii: bez tego błąd w module daje tylko czarny ekran
    i nie wiadomo, czy gra się zawiesiła, czy jeszcze wczytuje. */
@@ -70,12 +70,12 @@
 <div class="nakladka" id="ekran"></div>
 
 <script type="module">
-import { Gra, CELL } from './gra.js?v=1793190371';
-import { UI } from './ui.js?v=1793190371';
-import { Dzwiek } from './dzwiek.js?v=1793190371';
-import { Swiat } from './swiat.js?v=1793190371';
-import { Rekwizyty } from './rekwizyty.js?v=1793190371';
-import { ratujFenka, jumpscare, kielbasa } from './minigry.js?v=1793190371';
+import { Gra, CELL } from './gra.js?v=1793191130';
+import { UI } from './ui.js?v=1793191130';
+import { Dzwiek } from './dzwiek.js?v=1793191130';
+import { Swiat } from './swiat.js?v=1793191130';
+import { Rekwizyty } from './rekwizyty.js?v=1793191130';
+import { ratujFenka, jumpscare, kielbasa } from './minigry.js?v=1793191130';
 
 const gra = new Gra(document.getElementById('plotno'));
 const dzwiek = new Dzwiek();
@@ -278,7 +278,7 @@ swiat.naZdarzenie = async (co, szczegol) => {
   if (co === 'stoisko-postawione') {
     // model dostawiany po rozstawieniu, bo wczytuje się w tle
     rekwizyty.wnetrze('modele/stragan.glb', {
-      srodek: szczegol.srodek, szerokosc: 3.1
+      srodek: szczegol.srodek, szerokosc: 3.1, obrot: szczegol.obrot || 0
     }).then(r => { szczegol.model = r.obiekt; })
       .catch(e => console.warn('stragan:', e.message));
     return;
