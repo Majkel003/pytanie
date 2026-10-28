@@ -129,6 +129,35 @@ export class Labirynt {
     return out;
   }
 
+  /* Czy z pola A widać pole B. Celowo tylko wzdłuż korytarza: w tę samą
+     kolumnę albo ten sam rząd i bez ściany po drodze. Dzięki temu zasada
+     jest dla gracza czytelna, a nie zależy od ułamka stopnia obrotu. */
+  widacSie(ax, ay, bx, by, zasieg = 6) {
+    if (ax === bx) {
+      if (Math.abs(by - ay) > zasieg) return false;
+      const krok = by > ay ? 1 : -1, kier = krok > 0 ? S : N;
+      for (let y = ay; y !== by; y += krok) if (this.ma(ax, y, kier)) return false;
+      return true;
+    }
+    if (ay === by) {
+      if (Math.abs(bx - ax) > zasieg) return false;
+      const krok = bx > ax ? 1 : -1, kier = krok > 0 ? E : W;
+      for (let x = ax; x !== bx; x += krok) if (this.ma(x, ay, kier)) return false;
+      return true;
+    }
+    return false;
+  }
+
+  /* Losowe osiągalne pole oddalone o co najmniej `min` kroków od podanego. */
+  losoweDaleko(sx, sy, min = 8) {
+    const d = this.odleglosci(sx, sy);
+    const chetne = [];
+    for (let i = 0; i < d.length; i++) if (d[i] >= min) chetne.push(i);
+    if (!chetne.length) return null;
+    const i = chetne[Math.floor(this.rnd() * chetne.length)];
+    return { x: i % this.w, y: Math.floor(i / this.w) };
+  }
+
   /* Otwarte komnaty: wybite bloki bez ścian wewnętrznych. Bez nich całość
      jest równą siatką jednokomórkowych korytarzy i czyta się jak krata,
      a nie jak budynek z salami i zaułkami. */

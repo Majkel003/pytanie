@@ -148,6 +148,78 @@ export class Gra {
     this.#oznaczOdwiedzone();
   }
 
+  /* Biały pokój za drzwiami: ta sama maszyneria, ale bez mgły, bez pochodni
+     i bez zagrożenia. Po ciemnym labiryncie ma uderzyć kontrastem. */
+  zbudujBialyPokoj(bok = 5) {
+    if (this.grupa) {
+      this.scena.remove(this.grupa);
+      this.grupa.traverse(o => {
+        o.geometry?.dispose();
+        if (o.material) (Array.isArray(o.material) ? o.material : [o.material]).forEach(m => m.dispose());
+      });
+    }
+    this.grupa = new THREE.Group();
+    this.scena.add(this.grupa);
+
+    this.lab = new Labirynt(bok, bok, 1);
+    for (let y = 0; y < bok; y++) for (let x = 0; x < bok; x++) {
+      if (x < bok - 1) this.lab.usun(x, y, E);
+      if (y < bok - 1) this.lab.usun(x, y, S);
+    }
+    this.odwiedzone = new Uint8Array(bok * bok).fill(1);
+    this.wyjscie = null; this.punktWyjscia = null; this.blokadaWyjscia = [];
+
+    const sciany = this.lab.sciany(CELL, GRUBOSC);
+    const bialy = new THREE.MeshLambertMaterial({ color: 0xf4f1ea });
+    const n = sciany.length;
+    const poz = new Float32Array(n * 24 * 3), nor = new Float32Array(n * 24 * 3);
+    const ind = new Uint32Array(n * 36);
+    sciany.forEach((s, i) => {
+      const g = new THREE.BoxGeometry(s.x1 - s.x0, WYSOKOSC + 1.4, s.z1 - s.z0);
+      g.translate((s.x0 + s.x1) / 2, (WYSOKOSC + 1.4) / 2, (s.z0 + s.z1) / 2);
+      poz.set(g.attributes.position.array, i * 72);
+      nor.set(g.attributes.normal.array, i * 72);
+      for (let k = 0; k < 36; k++) ind[i * 36 + k] = g.index.array[k] + i * 24;
+      g.dispose();
+    });
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(poz, 3));
+    geo.setAttribute('normal', new THREE.BufferAttribute(nor, 3));
+    geo.setIndex(new THREE.BufferAttribute(ind, 1));
+    geo.computeBoundingSphere();
+    this.grupa.add(new THREE.Mesh(geo, bialy));
+    this.#kubelkiKolizji(sciany);
+
+    const W = bok * CELL;
+    const podloga = new THREE.Mesh(new THREE.PlaneGeometry(W, W),
+      new THREE.MeshLambertMaterial({ color: 0xeae6dc }));
+    podloga.rotation.x = -Math.PI / 2;
+    podloga.position.set(W / 2, 0, W / 2);
+    this.grupa.add(podloga);
+
+    const sufit = new THREE.Mesh(new THREE.PlaneGeometry(W, W),
+      new THREE.MeshLambertMaterial({ color: 0xffffff }));
+    sufit.rotation.x = Math.PI / 2;
+    sufit.position.set(W / 2, WYSOKOSC + 1.4, W / 2);
+    this.grupa.add(sufit);
+
+    // światło rozproszone zamiast pochodni
+    this.scena.fog = null;
+    this.scena.background = new THREE.Color(0xf4f1ea);
+    this.otoczenie.color.set(0xffffff);
+    this.otoczenie.intensity = 2.6;
+    this.latarka.intensity = 0;
+    this.mocLatarki = 0;
+    const gora = new THREE.PointLight(0xfff6e6, 60, 44, 1.1);
+    gora.position.set(W / 2, WYSOKOSC + 0.6, W / 2);
+    this.grupa.add(gora);
+
+    this.pozycja.set(W / 2, WZROST, W - CELL * 0.8);
+    this.obrot.set ? null : null;
+    this.obrot.x = 0; this.obrot.y = Math.PI;
+    return { bok: W };
+  }
+
   /* Yaw w pierwszą stronę, w którą z tej komórki da się wyjść:
      bez tego gracz budzi się nosem w murze. */
   #zwrotNaWyjscie(cx, cz) {
@@ -384,7 +456,9 @@ export class Gra {
         d.classList.add('widoczny');
         $('galka').style.transform = 'translate(-50%,-50%)';
       } else if (!patrzenie) {
-        patrzenie = { id: e.pointerId, px: e.clientX, py: e.clientY };
+        patrzenie = { id: e.pointerId, px: e.clientX, py: e.clientY,
+                      startX: e.clientX, startY: e.clientY, kiedy: performance.now(),
+                      przesuniecie: 0 };
         role.set(e.pointerId, 'patrzenie');
       }
       e.preventDefault();
@@ -402,6 +476,7 @@ export class Gra {
       } else if (rola === 'patrzenie' && patrzenie) {
         const dx = e.clientX - patrzenie.px, dy = e.clientY - patrzenie.py;
         patrzenie.px = e.clientX; patrzenie.py = e.clientY;
+        patrzenie.przesuniecie += Math.hypot(dx, dy);
         this.obrot.y -= dx * 0.0042;
         this.obrot.x = zacisk(this.obrot.x - dy * 0.0036, -0.85, 0.85);
       }
@@ -414,7 +489,14 @@ export class Gra {
         drazek = null;
         this.sterowanie.przod = this.sterowanie.bok = 0;
         $('drazek').classList.remove('widoczny');
-      } else if (rola === 'patrzenie') patrzenie = null;
+      } else if (rola === 'patrzenie') {
+        // stuknięcie, a nie rozglądanie: krótkie i bez przesunięcia
+        if (patrzenie && patrzenie.przesuniecie < 12 &&
+            performance.now() - patrzenie.kiedy < 400) {
+          this.naStukniecie?.();
+        }
+        patrzenie = null;
+      }
       role.delete(e.pointerId);
     };
     this.plotno.addEventListener('pointerup', koniec);

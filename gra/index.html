@@ -2,6 +2,7 @@
 <html lang="pl">
 <head>
 <meta charset="utf-8">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%230b0a10'/%3E%3Cpath d='M3 3h10v10H3z' fill='none' stroke='%23c9a24a' stroke-width='1.4'/%3E%3Cpath d='M3 8h4v5' fill='none' stroke='%23c9a24a' stroke-width='1.4'/%3E%3C/svg%3E">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0b0a10">
 <title>Labirynt</title>
@@ -49,7 +50,8 @@
 import { Gra, CELL } from './gra.js';
 import { UI } from './ui.js';
 import { Dzwiek } from './dzwiek.js';
-import { Postac, wczytajSprite } from './postacie.js';
+import { Swiat } from './swiat.js';
+import { Rekwizyty } from './rekwizyty.js';
 
 const gra = new Gra(document.getElementById('plotno'));
 const dzwiek = new Dzwiek();
@@ -210,33 +212,126 @@ start.addEventListener('click', async () => {
   UI.ukryjNakladke('ekran');
   UI.hud(true);
   UI.cel('Znajdź drogę w głąb');
+  await swiat.zaladuj();
+  swiat.rozpocznij();
+  rekwizyty.pochodnieNaScianach(16).catch(e => console.warn('pochodnie:', e.message));
+  const poprzedni = gra.naTik;
+  gra.naTik = (dt) => { poprzedni(dt); pilnujWyjscia(); };
   gra.start();
   await UI.odsloń(700);
   await UI.szept('Za tobą zamknęły się drzwi.');
 }, { once: true });
 
-/* ─────────────── postacie na planszy (na razie jedna, na próbę) ─────────────── */
-const postacie = [];
-(async () => {
-  const sprite = await wczytajSprite('postacie/programista.png');
-  const p = new Postac(gra.scena, sprite, { wysokosc: 1.76, nazwa: 'Programista' });
-  // dwie komórki dalej wzdłuż otwartego korytarza
-  const lab = gra.lab;
-  let cx = 0, cz = 0;
-  for (let i = 0; i < 3; i++) {
-    if (!lab.ma(cx, cz, 2) && lab.w_srodku(cx + 1, cz)) cx++;
-    else if (!lab.ma(cx, cz, 4) && lab.w_srodku(cx, cz + 1)) cz++;
-  }
-  p.ustaw(cx * CELL + CELL / 2, cz * CELL + CELL / 2);
-  postacie.push(p);
-  window.postacie = postacie;
-})();
+/* ─────────────── świat: postacie, pościg, cele ─────────────── */
+const swiat = new Swiat(gra, dzwiek, UI);
+const rekwizyty = new Rekwizyty(gra);
+gra.naTik = (dt) => { swiat.tik(dt); rekwizyty.tik(gra.czas); };
+gra.naStukniecie = () => swiat.uzyj();
 
-gra.naTik = (dt) => {
-  for (const p of postacie) p.patrzNa(gra.kamera, gra.czas, dt);
+const KWESTIE = {
+  programista: [
+    'O, hej. Idę szukać myszki do kompa.',
+    'Powodzenia w szukaniu Fenka.',
+    'Jakby co, Remcioszek poszedł tamtędy. Chyba. Nie patrzyłem.'
+  ]
+};
+let ktoraKwestia = 0;
+
+swiat.naZdarzenie = async (co) => {
+  if (co === 'programista') {
+    const t = KWESTIE.programista[ktoraKwestia % KWESTIE.programista.length];
+    ktoraKwestia++;
+    dzwiek.klik();
+    UI.szept(t, 2400);
+    return;
+  }
+  if (co === 'fenek') {
+    await UI.szept('Wiedziałem, że przyjdziesz.', 2200);
+    UI.szept('Trzymaj się blisko.', 1800);
+    return;
+  }
+  if (co === 'zauwazyl') {
+    UI.szept('On cię zobaczył.', 1500);
+    return;
+  }
+  if (co === 'drzwi') {
+    UI.cel('Wyjdźcie');
+    return;
+  }
+  if (co === 'zlapana') {
+    await smierc();
+  }
 };
 
+/* ─────────────── śmierć i restart ─────────────── */
+let wTrakcieSmierci = false;
+async function smierc() {
+  if (wTrakcieSmierci) return;
+  wTrakcieSmierci = true;
+  gra.zamrozony = true;
+  dzwiek.zlapanie();
+  dzwiek.napiecie(0);
+  UI.uderzenie();
+  UI.podpowiedz('');
+  swiat.zgony++;
+  swiat.zapisz();
+  await new Promise(r => setTimeout(r, 900));
+  await UI.zaslon(600);
+  UI.hud(false);
+  const znow = UI.pokazNakladke('ekran', {
+    znacznik: 'Remcioszek cię dorwał',
+    tytul: 'Od początku',
+    akapity: ['Labirynt jest ten sam. Remcioszek pójdzie inaczej.'],
+    przycisk: 'Jeszcze raz'
+  });
+  await UI.odsloń(10);
+  znow.addEventListener('click', async () => {
+    dzwiek.klik();
+    await UI.zaslon(400);
+    UI.ukryjNakladke('ekran');
+    gra.zbuduj(22, 22, 20261028);
+    rekwizyty.usun();
+    swiat.rozpocznij();
+    rekwizyty.pochodnieNaScianach(16).catch(e => console.warn('pochodnie:', e.message));
+    UI.hud(true);
+    gra.zamrozony = false;
+    wTrakcieSmierci = false;
+    await UI.odsloń(600);
+  }, { once: true });
+}
+
+/* ─────────────── wyjście do białego pokoju ─────────────── */
+let wyszli = false;
+const pilnujWyjscia = () => {
+  if (wyszli || !gra.wyjscieOtwarte || !gra.wyjscie) return;
+  const w = gra.wyjscie, pw = gra.punktWyjscia;
+  const poza = { 1: gra.pozycja.z < pw.z - 1.6, 2: gra.pozycja.x > pw.x + 1.6,
+                 4: gra.pozycja.z > pw.z + 1.6, 8: gra.pozycja.x < pw.x - 1.6 }[w.kier];
+  if (poza) { wyszli = true; bialyPokoj(); }
+};
+
+async function bialyPokoj() {
+  gra.zamrozony = true;
+  dzwiek.napiecie(0);
+  dzwiek.cisza(1400);
+  await UI.zaslon(900);
+  UI.hud(false);
+  UI.podpowiedz('');
+  swiat.usunPostacie();
+  gra.zbudujBialyPokoj(5);
+  gra.zamrozony = false;
+  await UI.odsloń(1400);
+  await UI.szept('I tyle. Wyszliście.', 3000);
+  UI.pokazNakladke('ekran', {
+    znacznik: 'Koniec',
+    tytul: 'Biały pokój',
+    akapity: ['Dalszy ciąg za miesiąc.']
+  });
+}
+
 window.gra = gra;
+window.swiat = swiat;
+window.rekwizyty = rekwizyty;
 window.UI = UI;
 window.dzwiek = dzwiek;
 </script>
