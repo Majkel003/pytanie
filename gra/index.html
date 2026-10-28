@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,600;1,400&family=Oswald:wght@300;400&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styl.css?v=1793185281">
+<link rel="stylesheet" href="styl.css?v=1793185890">
 <script>
 /* Łapacz awarii: bez tego błąd w module daje tylko czarny ekran
    i nie wiadomo, czy gra się zawiesiła, czy jeszcze wczytuje. */
@@ -68,11 +68,11 @@
 <div class="nakladka" id="ekran"></div>
 
 <script type="module">
-import { Gra, CELL } from './gra.js?v=1793185281';
-import { UI } from './ui.js?v=1793185281';
-import { Dzwiek } from './dzwiek.js?v=1793185281';
-import { Swiat } from './swiat.js?v=1793185281';
-import { Rekwizyty } from './rekwizyty.js?v=1793185281';
+import { Gra, CELL } from './gra.js?v=1793185890';
+import { UI } from './ui.js?v=1793185890';
+import { Dzwiek } from './dzwiek.js?v=1793185890';
+import { Swiat } from './swiat.js?v=1793185890';
+import { Rekwizyty } from './rekwizyty.js?v=1793185890';
 
 const gra = new Gra(document.getElementById('plotno'));
 const dzwiek = new Dzwiek();
@@ -236,6 +236,9 @@ start.addEventListener('click', async () => {
   await swiat.zaladuj();
   swiat.rozpocznij();
   rekwizyty.pochodnieNaScianach(16).catch(e => console.warn('pochodnie:', e.message));
+  rekwizyty.drobiazgi(14);
+  rekwizyty.wnetrze('modele/sala.glb', { x: 0, y: 0, bok: 2, wysokosc: 3.9, obrot: Math.PI })
+    .catch(e => console.warn('sala:', e.message));
   const poprzedni = gra.naTik;
   gra.naTik = (dt) => { poprzedni(dt); pilnujWyjscia(); };
   gra.start();
@@ -273,6 +276,16 @@ swiat.naZdarzenie = async (co) => {
   }
   if (co === 'zauwazyl') {
     UI.szept('On cię zobaczył.', 1500);
+    return;
+  }
+  if (co === 'pajak') {
+    dzwiek.zlapanie();
+    UI.uderzenie();
+    UI.szept('Coś przebiegło Ci po nodze.', 1600);
+    return;
+  }
+  if (co === 'zamkniete') {
+    UI.szept('Nie wyjdę bez niego.', 1800);
     return;
   }
   if (co === 'drzwi') {
@@ -339,14 +352,22 @@ async function bialyPokoj() {
   UI.hud(false);
   UI.podpowiedz('');
   swiat.usunPostacie();
-  gra.zbudujBialyPokoj(5);
+  rekwizyty.usun();
+  const pokoj = gra.zbudujBialyPokoj(5);
   gra.zamrozony = false;
+
+  // mieszkanie jako sceneria końcowa, a w nim oboje
+  await rekwizyty.wnetrze('modele/mieszkanie.glb',
+    { x: 0, y: 0, bok: 5, wysokosc: 4.4 }).catch(e => console.warn('mieszkanie:', e.message));
+  await swiat.scenaKoncowa(pokoj.bok);
+
   await UI.odsloń(1400);
-  await UI.szept('I tyle. Wyszliście.', 3000);
+  await UI.szept('I tyle. Wyszliście.', 2600);
+  await UI.szept('Dalszy ciąg za miesiąc.', 2400);
   UI.pokazNakladke('ekran', {
     znacznik: 'Koniec',
-    tytul: 'Biały pokój',
-    akapity: ['Dalszy ciąg za miesiąc.']
+    tytul: 'Jesteście w domu',
+    akapity: ['Ciąg dalszy nastąpi.']
   });
 }
 

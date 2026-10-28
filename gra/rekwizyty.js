@@ -1,6 +1,7 @@
-import * as THREE from './lib/three.module.js?v=1793185281';
-import { GLTFLoader } from './lib/GLTFLoader.js?v=1793185281';
-import { CELL } from './gra.js?v=1793185281';
+import * as THREE from './lib/three.module.js?v=1793185890';
+import { GLTFLoader } from './lib/GLTFLoader.js?v=1793185890';
+import { mergeGeometries } from './lib/BufferGeometryUtils.js?v=1793185890';
+import { CELL } from './gra.js?v=1793185890';
 
 /* Modele wstawiane do labiryntu. Każdy wczytywany raz i powielany przez
    klonowanie, bo kopia dzieli geometrię i teksturę z oryginałem i nie
@@ -91,7 +92,8 @@ export class Rekwizyty {
       const sx = x * CELL + CELL / 2 + dx * (CELL / 2 - 0.42);
       const sz = y * CELL + CELL / 2 + dz * (CELL / 2 - 0.42);
       egz.position.set(sx, 1.55, sz);
-      egz.rotation.y = Math.atan2(-dx, -dz);
+      // model ma płytę montażową z boku, stąd ćwierć obrotu w lewo
+      egz.rotation.y = Math.atan2(-dx, -dz) - Math.PI / 2;
       this.grupa.add(egz);
 
       // płomień siada na wierzchołku modelu, a nie w miejscu zgadniętym z ręki
@@ -134,6 +136,77 @@ export class Rekwizyty {
       const t = czas + p.faza;
       l.intensity = 11 * (1 + Math.sin(t * 9.1) * 0.15 + Math.sin(t * 3.3) * 0.09);
     });
+  }
+
+  /* ───────── sceneria pomieszczeń ─────────
+     Model wstawiany jako dekoracja w komórkach, w których i tak nie ma
+     ścian wewnętrznych. Kolizje zostają te labiryntowe, więc nie da się
+     utknąć w meblach.                                                   */
+  async wnetrze(sciezka, { x, y, bok = 2, wysokosc = 3.0, obrot = 0, podniesienie = 0 } = {}) {
+    const wzor = await model(sciezka);
+    const egz = wzor.clone(true);
+    dopasuj(egz, wysokosc);
+    const srodek = {
+      x: x * CELL + (bok * CELL) / 2,
+      z: y * CELL + (bok * CELL) / 2
+    };
+    egz.position.x = srodek.x;
+    egz.position.z = srodek.z;
+    egz.position.y += podniesienie;
+    egz.rotation.y = obrot;
+    this.grupa.add(egz);
+    return egz;
+  }
+
+  /* Beczki budowane z brył. Model z generatora miał 137 tysięcy trójkątów
+     na sztukę i przy kilkunastu kopiach zjadał całą klatkę; tutaj jedna
+     beczka to niecałe dwieście trójkątów, a w półmroku wygląda tak samo. */
+  #geometriaBeczki() {
+    if (this.geoBeczki) return this.geoBeczki;
+    // wszystkie części scalone w jedną bryłę: jedna beczka to jedno
+    // wywołanie rysowania, nie sześć
+    const czesci = [];
+    const dodaj = (geo, y, obrot) => {
+      if (obrot) geo.rotateX(obrot);
+      geo.translate(0, y, 0);
+      czesci.push(geo);
+    };
+    dodaj(new THREE.CylinderGeometry(0.34, 0.30, 0.9, 10, 1), 0.45);
+    dodaj(new THREE.CylinderGeometry(0.38, 0.38, 0.42, 10, 1), 0.45);
+    for (const y of [0.16, 0.45, 0.74])
+      dodaj(new THREE.TorusGeometry(y === 0.45 ? 0.385 : 0.335, 0.028, 4, 10), y, Math.PI / 2);
+    dodaj(new THREE.CircleGeometry(0.335, 10), 0.901, -Math.PI / 2);
+    for (const c of czesci) { c.deleteAttribute('uv'); }
+    this.geoBeczki = mergeGeometries(czesci, false);
+    czesci.forEach(c => c.dispose());
+    this.matBeczki = new THREE.MeshLambertMaterial({ color: 0x6b4a2c });
+    return this.geoBeczki;
+  }
+
+  #beczka() {
+    return new THREE.Mesh(this.#geometriaBeczki(), this.matBeczki);
+  }
+
+  /* Drobiazgi przy ścianach: beczki po kątach korytarzy. */
+  drobiazgi(ile = 10) {
+    const lab = this.gra.lab;
+    let postawione = 0, proby = 0;
+    while (postawione < ile && proby < ile * 25) {
+      proby++;
+      const x = Math.floor(lab.rnd() * lab.w), y = Math.floor(lab.rnd() * lab.h);
+      // tylko tam, gdzie są przynajmniej dwie ściany: róg albo zaułek
+      const scian = [1, 2, 4, 8].filter(k => lab.ma(x, y, k)).length;
+      if (scian < 2) continue;
+      const egz = this.#beczka();
+      const s = 0.9 + lab.rnd() * 0.3;
+      egz.scale.setScalar(s);
+      egz.position.set(x * CELL + CELL / 2 + (lab.rnd() - 0.5) * 1.6,
+                       0, y * CELL + CELL / 2 + (lab.rnd() - 0.5) * 1.6);
+      egz.rotation.y = lab.rnd() * Math.PI * 2;
+      this.grupa.add(egz);
+      postawione++;
+    }
+    return postawione;
   }
 
   usun() {

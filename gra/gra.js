@@ -1,5 +1,5 @@
-import * as THREE from './lib/three.module.js?v=1793185281';
-import { Labirynt, N, E, S, W } from './labirynt.js?v=1793185281';
+import * as THREE from './lib/three.module.js?v=1793185890';
+import { Labirynt, N, E, S, W } from './labirynt.js?v=1793185890';
 
 /* ───────────────── wymiary świata ───────────────── */
 export const CELL = 4;        // bok komórki labiryntu
@@ -130,6 +130,11 @@ export class Gra {
     this.lab = new Labirynt(szer, wys, ziarno);
     this.lab.rozplec(rozplot);          // pętle: więcej niż jedna droga
     this.lab.wykujKomnaty(komnaty, 3);  // otwarte sale, żeby nie była to sama krata
+    // sala startowa: gracz budzi się w pomieszczeniu, nie w korytarzu
+    for (let y = 0; y < 2; y++) for (let x = 0; x < 2; x++) {
+      if (x < 1) this.lab.usun(x, y, E);
+      if (y < 1) this.lab.usun(x, y, S);
+    }
     this.odwiedzone = new Uint8Array(szer * wys);
 
     this.wyjscie = this.lab.najdalszeNaObrzezu(0, 0);
@@ -142,9 +147,10 @@ export class Gra {
     this.blokadaWyjscia = bryly.blokada;
     this.#podlogaISufit(szer, wys);
 
-    this.pozycja.set(CELL / 2, WZROST, CELL / 2);
+    // start na środku sali, twarzą w jej głąb
+    this.pozycja.set(CELL, WZROST, CELL * 0.6);
     this.obrot.x = 0;
-    this.obrot.y = this.#zwrotNaWyjscie(0, 0);
+    this.obrot.y = Math.PI;
     this.#oznaczOdwiedzone();
   }
 

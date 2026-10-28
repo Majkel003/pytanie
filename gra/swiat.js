@@ -1,6 +1,7 @@
-import * as THREE from './lib/three.module.js?v=1793185281';
-import { Postac, wczytajSprite } from './postacie.js?v=1793185281';
-import { CELL } from './gra.js?v=1793185281';
+import * as THREE from './lib/three.module.js?v=1793185890';
+import { Postac, wczytajSprite } from './postacie.js?v=1793185890';
+import { Pajak } from './pajak.js?v=1793185890';
+import { CELL } from './gra.js?v=1793185890';
 
 /* Logika świata: kto gdzie stoi, kto za kim chodzi, kiedy otwiera się wyjście.
    Silnik (gra.js) nie wie nic o fabule, a to tutaj nie dotyka renderowania. */
@@ -137,9 +138,63 @@ export class Swiat {
     this.tecza.position.set(this.remRuch.poz.x, 1.7, this.remRuch.poz.y);
     gra.scena.add(this.tecza);
 
+    this.#rozstawPajaki(3);
+
     this.znacznikiNaMapie();
     this.stan = 'szukanie';
     this.ui.cel('Znajdź Fenka');
+  }
+
+  /* Pająki: wałęsają się po labiryncie, a gdy zobaczą gracza z korytarza,
+     ruszają biegiem. Dotknięcie nie zabija, tylko odrzuca i przestrasza. */
+  #rozstawPajaki(ile) {
+    const lab = this.gra.lab;
+    this.pajaki = [];
+    for (let i = 0; i < ile; i++) {
+      const k = lab.losoweDaleko(0, 0, 10);
+      if (!k) continue;
+      const p = new Pajak(this.gra.scena, { skala: 0.62 });
+      p.ustaw(k.x * CELL + CELL / 2, k.y * CELL + CELL / 2);
+      this.pajaki.push({
+        model: p,
+        ruch: new Ruch(lab, k.x * CELL + CELL / 2, k.y * CELL + CELL / 2),
+        stan: 'lazi', odpoczynek: 0
+      });
+    }
+  }
+
+  #pajaki(dt) {
+    if (!this.pajaki) return;
+    const g = this.gra, lab = g.lab;
+    const [gx, gy] = g.komorka();
+    for (const p of this.pajaki) {
+      const [px, py] = p.ruch.komorka;
+      const odl = Math.hypot(g.pozycja.x - p.ruch.poz.x, g.pozycja.z - p.ruch.poz.y);
+      const widzi = lab.widacSie(px, py, gx, gy, 5);
+
+      if (p.stan === 'lazi') {
+        if (widzi && odl < CELL * 5) { p.stan = 'biegnie'; this.dzwiek?.stuk(); }
+        else if (p.ruch.krok(dt, 1.5)) {
+          const cel = lab.losoweDaleko(px, py, 4);
+          if (cel) p.ruch.ustawCel(cel.x, cel.y);
+        }
+      } else {
+        p.ruch.ustawCel(gx, gy);
+        p.ruch.krok(dt, 3.1);
+        if (!widzi && odl > CELL * 3.5) {
+          p.odpoczynek += dt;
+          if (p.odpoczynek > 4) { p.stan = 'lazi'; p.odpoczynek = 0; }
+        } else p.odpoczynek = 0;
+
+        if (odl < 1.5) { this.naZdarzenie?.('pajak'); p.stan = 'lazi'; p.odpoczynek = 0;
+                         const uciec = lab.losoweDaleko(px, py, 6);
+                         if (uciec) p.ruch.ustawCel(uciec.x, uciec.y); }
+      }
+
+      p.model.ustaw(p.ruch.poz.x, p.ruch.poz.y);
+      if (p.ruch.kierunek !== undefined) p.model.zwrot(p.ruch.kierunek);
+      p.model.animuj(dt, p.stan === 'biegnie' ? 3.1 : 1.5);
+    }
   }
 
   znacznikiNaMapie() {
@@ -151,6 +206,7 @@ export class Swiat {
   usunPostacie() {
     for (const p of this.postacie) p.usun();
     this.postacie = [];
+    if (this.pajaki) { for (const p of this.pajaki) p.model.usun(); this.pajaki = null; }
     if (this.tecza) { this.gra.scena.remove(this.tecza); this.tecza = null; }
   }
 
@@ -167,8 +223,12 @@ export class Swiat {
 
     for (const p of this.postacie) p.patrzNa(g.kamera, this.czas, dt);
 
-    this.#remcioszek(dt);
-    this.#fenek(dt);
+    // po scenie końcowej nie ma już ani Remcioszka, ani drzwi, ani celów
+    if (this.stan === 'wyszli') return;
+
+    if (this.remcioszek && this.tecza) this.#remcioszek(dt);
+    this.#pajaki(dt);
+    if (this.fenek) this.#fenek(dt);
     this.#podpowiedzi();
   }
 
@@ -207,7 +267,7 @@ export class Swiat {
         }
       } else this.remBezTropu = 0;
 
-      if (odl < 1.1) { this.naZdarzenie?.('zlapana'); return; }
+      if (odl < 1.9) { this.naZdarzenie?.('zlapana'); return; }
     }
 
     this.remcioszek.ustaw(this.remRuch.poz.x, this.remRuch.poz.y);
@@ -275,12 +335,22 @@ export class Swiat {
     }
     this.przyProgramiscie = false;
 
-    if (this.fenekZabrany && !g.wyjscieOtwarte && g.przyWyjsciu(2.6)) {
-      this.ui.podpowiedz('Otwórz drzwi');
-      this.przyDrzwiach = true;
+    if (g.punktWyjscia && !g.wyjscieOtwarte && g.przyWyjsciu(2.8)) {
+      if (this.fenekZabrany) {
+        this.ui.podpowiedz('Otwórz drzwi');
+        this.przyDrzwiach = true;
+      } else {
+        // bez tego gracz stoi przy drzwiach i nie wie, czy to usterka
+        this.ui.podpowiedz('Zamknięte. Najpierw znajdź Fenka');
+        this.przyDrzwiach = false;
+        this.zamknieteDrzwi = true;
+        return;
+      }
+      this.zamknieteDrzwi = false;
       return;
     }
     this.przyDrzwiach = false;
+    this.zamknieteDrzwi = false;
     this.ui.podpowiedz('');
   }
 
@@ -300,7 +370,30 @@ export class Swiat {
       this.naZdarzenie?.('drzwi');
       return true;
     }
+    if (this.zamknieteDrzwi) {
+      this.dzwiek?.zamek();
+      this.naZdarzenie?.('zamkniete');
+      return true;
+    }
     return false;
+  }
+
+  /* ───────── obsada sceny końcowej ───────── */
+  async scenaKoncowa(bok) {
+    const { gra } = this;
+    this.usunPostacie();
+    const srodek = bok / 2;
+
+    this.fenek = new Postac(gra.scena, this.sprite.fenek, { wysokosc: 1.8, nazwa: 'Fenek' });
+    this.fenek.ustaw(srodek - 0.9, srodek - 1.4);
+    this.postacie.push(this.fenek);
+
+    this.wika = new Postac(gra.scena, this.sprite.wika, { wysokosc: 1.72, nazwa: 'Wika' });
+    this.wika.ustaw(srodek + 0.9, srodek - 1.4);
+    this.postacie.push(this.wika);
+
+    this.stan = 'wyszli';
+    this.zapisz();
   }
 
   /* ───────── zapis postępu w pamięci telefonu ───────── */
