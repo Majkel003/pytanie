@@ -91,7 +91,7 @@ button,.opt{font-family:'EB Garamond',serif;cursor:pointer}
 .hintline.pod div{margin-top:7px}
 .revtitle{font-family:Oswald,sans-serif;font-size:10px;letter-spacing:.22em;text-transform:uppercase;
   color:var(--gold);text-align:center;margin:22px 0 10px;border-top:.8px solid var(--goldln);padding-top:14px}
-/* ——— minigry: wszystko na stuknięcia, zero przeciągania (Safari iOS) ——— */
+/* minigry: wszystko na stuknięcia, zero przeciągania (Safari iOS) */
 .gwrap{touch-action:manipulation;-webkit-user-select:none;user-select:none}
 .gtxt{font-size:14.5px;line-height:1.45;color:var(--muted);font-style:italic;margin-bottom:14px;text-align:center}
 .gstat{font-family:Oswald,sans-serif;font-size:11px;letter-spacing:.2em;text-transform:uppercase;
@@ -175,7 +175,7 @@ button,.opt{font-family:'EB Garamond',serif;cursor:pointer}
   <section class="scr" id="q">
     <div class="prog" id="prog"></div>
     <div class="qn" id="qnum">Pytanie 1</div>
-    <h1 class="sm" id="qtext">—</h1>
+    <h1 class="sm" id="qtext"></h1>
     <div class="imgwrap" id="imgwrap"><img class="qimg" id="qimg" alt=""></div>
     <div class="opts" id="opts"></div>
     <div class="hintline" id="hint"></div>
@@ -196,7 +196,7 @@ button,.opt{font-family:'EB Garamond',serif;cursor:pointer}
 
 <script>
 /* ════════════════════════════════════════════════════════════════
-   PYTANIA — edytuj tutaj i nic więcej.
+   PYTANIA. Edytuj tutaj i nic więcej.
    q    : treść pytania
    a    : lista odpowiedzi
    ok   : numer poprawnej (liczymy od 0, czyli pierwsza = 0)
@@ -206,7 +206,7 @@ button,.opt{font-family:'EB Garamond',serif;cursor:pointer}
           zdradziłoby rozwiązanie)
    type : 'text' = odpowiedź wpisywana z klawiatury; must = lista grup słów,
           z każdej grupy musi paść choć jedno; pokaz = odpowiedź do ujawnienia
-   type : 'rate' = suwak 0–10 zamiast odpowiedzi; min = najniższa przyjmowana ocena
+   type : 'rate' = suwak 0-10 zamiast odpowiedzi; min = najniższa przyjmowana ocena
           (pytania z suwakiem nie liczą się do wyniku)
 
    Pytanie z pustym "q" jest automatycznie pomijane,
@@ -232,7 +232,7 @@ const QUESTIONS = [
   { q:'Skąd mam to zdjęcie?',
     img:'foto1.jpg',
     a:['Sam je zrobiłem','Wysłałaś mi je','Wziąłem je z Twojego Instagrama','Dostałem od Twojej koleżanki'], ok:1,
-    note:'Wysłałaś je sama. Trzymam do dziś — chyba wystarczająca recenzja.' },
+    note:'Wysłałaś je sama. Trzymam do dziś. Chyba wystarczająca recenzja.' },
   { q:'Oceń mój outfit z 2024 roku.', type:'rate', min:7,
     img:'foto2.jpg',
     note:'Dziękujemy. Ocena została zapisana jako wiążąca. Odwołanie nie przysługuje.' },
@@ -241,19 +241,19 @@ const QUESTIONS = [
     a:['Pierogi ruskie','Żurek w chlebie','Schabowego z ziemniakami','Placki ziemniaczane'], ok:1,
     note:'W chlebie. Połowa chleba została, bo zawsze zostaje.' },
   { q:'Przerwa pierwsza', type:'game', game:'pary',
-    note:'Sześć par — same rzeczy, które gdzieś już dziś przewinęły się w pytaniach.' },
+    note:'Sześć par. Same rzeczy, które gdzieś już dziś przewinęły się w pytaniach.' },
 
   { q:'Które z naszych filmów wrzuciłem na YouTube?',
     a:['Nasz film z urbexu','Nasz film z Xpenga','Nasz film z wyjazdu do Portugalii','Żadnego z powyższych'], ok:3,
     note:'Żadnego. Trzy bardzo przekonujące opcje i ani jedna prawdziwa.' },
-  { q:'A tutaj — byliśmy już razem?',
+  { q:'A tutaj byliśmy już razem?',
     img:'foto7.jpg',
     a:['Tak, już wtedy','Nie, jeszcze nie'], ok:1,
     note:'Jeszcze nie. Wyglądało już dokładnie tak jak teraz, tylko bez nazwy.' },
 
   { q:'Ile wyciskam hantlami na ławce płaskiej?',
     a:['15 kg na rękę','20 kg na rękę','25 kg na rękę','30 kg na rękę'], ok:2,
-    note:'Dwadzieścia pięć. Na rękę, nie łącznie — i zawsze to podkreślam.' },
+    note:'Dwadzieścia pięć. Na rękę, nie łącznie, i zawsze to podkreślam.' },
   { q:'Jaki był pierwszy tatuaż, który mi zrobiłaś?',
     a:['PASSION','CHAOS','Panda','Lis'], ok:1,
     imgAfter:'foto3.jpg',
@@ -262,7 +262,7 @@ const QUESTIONS = [
   { q:'Jaką prędkość tu rozwinęłaś?',
     img:'foto8.jpg',
     a:['5 km/h','25 km/h','60 km/h','310 km/h'], ok:0,
-    note:'Pięć. Dokładnie tyle, ile przewidział producent — mina sugerowała trzysta dziesięć.' },
+    note:'Pięć. Dokładnie tyle, ile przewidział producent. Mina sugerowała trzysta dziesięć.' },
 
   { q:'Co robiliśmy rano po pierwszej nocy w namiocie u Wiki?',
     a:['Zrobiliśmy śniadanie na kuchence turystycznej',
@@ -294,12 +294,12 @@ const QUESTIONS = [
   { q:'Gdzie zrobiono to zdjęcie?',
     img:'foto9.jpg',
     a:['Navagio, Grecja','Praia da Dona Ana, Portugalia','Elafonisi, Grecja','Praia da Marinha, Portugalia'], ok:1,
-    note:'Praia da Dona Ana. Dwie greckie i dwie portugalskie — sam kraj to było za mało.' },
+    note:'Praia da Dona Ana. Dwie greckie i dwie portugalskie. Sam kraj to było za mało.' },
 
   { q:'Na ile metrów zeszliśmy pod wodę?',
     img:'foto5.jpg',
     a:['5 metrów','12 metrów','20 metrów','45 metrów'], ok:1,
-    note:'Dwanaście. Rekin był atrapą — wrażenie już nie.' },
+    note:'Dwanaście. Rekin był atrapą, wrażenie już nie.' },
 
   { q:'Czy robiąc to zdjęcie byliśmy już w związku?',
     img:'foto6.jpg',
@@ -319,7 +319,7 @@ const QUESTIONS = [
 
   { q:'Co kocham w Tobie najbardziej?', type:'multi',
     a:['Charakter','Poczucie humoru','Inteligencję','Upór'], ok:[0,2],
-    note:'Charakter i inteligencję. Dwie rzeczy, nie jedna — i to nie był błąd formularza.' },
+    note:'Charakter i inteligencję. Dwie rzeczy, nie jedna, i to nie był błąd formularza.' },
 
   { q:'Nad czym teraz pracujemy w związku?',
     a:['Nad cierpliwością',
@@ -330,11 +330,11 @@ const QUESTIONS = [
 
   { q:'Jak ma nazywać się nasze zwierzę?',
     a:['Bazyl','Gacuś','Fistaszek','Kluska'], ok:1,
-    note:'Gacuś. Imię gotowe od dawna — brakuje tylko zwierzęcia.' },
+    note:'Gacuś. Imię gotowe od dawna, brakuje tylko zwierzęcia.' },
 
   { q:'Jakiego przezwiska nie lubię?',
     a:['Misiek','Grzybek','Kotek','Skarbie'], ok:1,
-    note:'Grzybek. Nie mam pojęcia, skąd się wziął — i wolałbym, żeby tam został.' },
+    note:'Grzybek. Nie mam pojęcia, skąd się wziął, i wolałbym, żeby tam został.' },
 
   { q:'Jakie jest moje marzenie? Jedno słowo.', type:'text',
     ph:'jedno słowo',
@@ -372,7 +372,7 @@ function scr(id){ document.querySelectorAll('.scr').forEach(s=>s.classList.remov
   $(id).classList.add('on'); fitH(); try{window.scrollTo({top:0,behavior:'instant'})}catch(e){window.scrollTo(0,0)} }
 
 function begin(){
-  if(!QUESTIONS.length){ alert('Brak pytań — uzupełnij listę w pliku.'); return; }
+  if(!QUESTIONS.length){ alert('Brak pytań. Uzupełnij listę w pliku.'); return; }
   $('prog').innerHTML = QUESTIONS.map(()=>'<span class="dot"></span>').join('');
   i=0; score=0; odpowiedzi=[]; scr('q'); render();
 }
@@ -429,7 +429,7 @@ function render(){
       const ok=Q.fields.every((f,n)=>f.must.some(a=>norm(vals[n]).includes(norm(a))));
       if(ok) score++;
       Q.fields.forEach((f,n)=>$('f'+n).disabled=true); b.disabled=true;
-      zapisz({q:Q.q, mine:vals.filter(Boolean).join(' · ')||'—', correct:Q.pokaz, ok, note:Q.note, img:Q.imgAfter});
+      zapisz({q:Q.q, mine:vals.filter(Boolean).join(' · ')||'(puste)', correct:Q.pokaz, ok, note:Q.note, img:Q.imgAfter});
     };
     return;
   }
@@ -473,7 +473,7 @@ function render(){
 
   if(Q.type==='rate'){
     const box=document.createElement('div'); box.className='rate';
-    box.innerHTML='<div class="rateval" id="rv">—</div>'+
+    box.innerHTML='<div class="rateval" id="rv">?</div>'+
       '<input type="range" id="rs" min="0" max="10" step="1" value="5">'+
       '<div class="scale"><span>0</span><span>10</span></div>';
     const b=document.createElement('button'); b.className='go'; b.id='rb'; b.textContent='Zatwierdź ocenę';
@@ -544,7 +544,7 @@ function koniecGry(Q){
     note:Q.note, gra:true}); dalej(); }, 650));
 }
 
-/* GRA 1 — dopasuj pary */
+/* GRA 1: dopasuj pary */
 function graPary(w,Q){
   const ikony=['🦊','🦈','🍜','⛺','🏎️','🏖️'];
   const talia=[...ikony,...ikony].sort(()=>Math.random()-0.5);
@@ -580,7 +580,7 @@ function graPary(w,Q){
   });
 }
 
-/* GRA 2 — lap serduszka */
+/* GRA 2: lap serduszka */
 function graSerca(w,Q){
   w.innerHTML='<div class="gtxt">Złap dziesięć serc. Pojawiają się na moment.</div>'+
     '<div class="arena" id="arena"></div><div class="gstat" id="sstat">0 z 10</div>';
@@ -604,7 +604,7 @@ function graSerca(w,Q){
   graTimer.push(setTimeout(dodaj,350));
 }
 
-/* GRA 3 — powtorz sekwencje */
+/* GRA 3: powtorz sekwencje */
 function graSekwencja(w,Q){
   w.innerHTML='<div class="gtxt">Zapamiętaj kolejność i powtórz ją. Cztery rundy.</div>'+
     '<div class="pady" id="pady"></div><div class="gstat" id="qstat">Runda 1 z 4</div>';
@@ -637,7 +637,7 @@ function graSekwencja(w,Q){
         graTimer.push(setTimeout(nowaRunda,620));
       }
     } else {
-      czekaj=true; stat.textContent='Pomyłka — jeszcze raz tę rundę';
+      czekaj=true; stat.textContent='Pomyłka, jeszcze raz tę rundę';
       krok=0;
       graTimer.push(setTimeout(()=>{
         stat.textContent='Runda '+runda+' z 4';
@@ -656,7 +656,7 @@ function finish(){
   let v;
   if(p===100) v='Komplet. Trochę mnie przeraża, jak dobrze mnie znasz.';
   else if(p>=75) v='Bardzo dobrze. Resztę dopowiem przy najbliższej kolacji.';
-  else if(p>=50) v='Średnio — ale i tak zostajesz, bo bilety są bezterminowe.';
+  else if(p>=50) v='Średnio, ale i tak zostajesz, bo bilety są bezterminowe.';
   else v='Słabo. Na szczęście ten egzamin nie był obowiązkowy ani punktowany.';
   $('verdict').textContent=v;
   $('review').innerHTML = odpowiedzi.filter(a=>!a.gra).map((a,idx)=>{
