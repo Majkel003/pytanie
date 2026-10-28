@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,600;1,400&family=Oswald:wght@300;400&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styl.css?v=1793201601">
+<link rel="stylesheet" href="styl.css?v=1793201931">
 <script>
 /* Łapacz awarii: bez tego błąd w module daje tylko czarny ekran
    i nie wiadomo, czy gra się zawiesiła, czy jeszcze wczytuje. */
@@ -73,12 +73,12 @@
 <div class="nakladka" id="ekran"></div>
 
 <script type="module">
-import { Gra, CELL } from './gra.js?v=1793201601';
-import { UI } from './ui.js?v=1793201601';
-import { Dzwiek } from './dzwiek.js?v=1793201601';
-import { Swiat } from './swiat.js?v=1793201601';
-import { Rekwizyty } from './rekwizyty.js?v=1793201601';
-import { ratujFenka, jumpscare, kielbasa } from './minigry.js?v=1793201601';
+import { Gra, CELL } from './gra.js?v=1793201931';
+import { UI } from './ui.js?v=1793201931';
+import { Dzwiek } from './dzwiek.js?v=1793201931';
+import { Swiat } from './swiat.js?v=1793201931';
+import { Rekwizyty } from './rekwizyty.js?v=1793201931';
+import { ratujFenka, jumpscare, kielbasa } from './minigry.js?v=1793201931';
 
 const gra = new Gra(document.getElementById('plotno'));
 const dzwiek = new Dzwiek();
@@ -243,7 +243,11 @@ function opisBledu(e) {
 start.addEventListener('click', async () => {
   try {
     try {
-      await dzwiek.odblokuj();
+      // twardy limit czasu: dźwięk nigdy nie może zatrzymać wejścia do gry
+      await Promise.race([
+        dzwiek.odblokuj(),
+        new Promise((_, odrzuc) => setTimeout(() => odrzuc(new Error('dźwięk nie odpowiada')), 2500))
+      ]);
       dzwiek.start();
       pilnujDzwieku();
     } catch (e) {

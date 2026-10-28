@@ -30,17 +30,24 @@ export class Dzwiek {
     const s = this.ctx.createBufferSource();
     s.buffer = b; s.connect(this.ctx.destination); s.start(0);
 
-    // cichy, zapętlony element: przestawia sesję iOS na „odtwarzanie"
+    // Cichy, zapętlony element przestawia sesję iOS na „odtwarzanie".
+    // Nie czekamy na niego: na iPhonie play() potrafi nigdy nie oddać
+    // obietnicy, a wtedy cała gra stoi i nic się nie dzieje.
     try {
       this.cichy = new Audio(SILENT_WAV);
       this.cichy.loop = true;
       this.cichy.volume = 0.001;
       this.cichy.playsInline = true;
       this.cichy.setAttribute('playsinline', '');
-      await this.cichy.play().catch(() => {});
+      const obietnica = this.cichy.play();
+      if (obietnica && obietnica.catch) obietnica.catch(() => {});
     } catch (e) { /* nie szkodzi, to tylko próba */ }
 
-    await this.ctx.resume();
+    // resume() też bywa, że nie wraca: dajemy mu sekundę i idziemy dalej
+    await Promise.race([
+      this.ctx.resume().catch(() => {}),
+      new Promise(r => setTimeout(r, 1000))
+    ]);
     this.#zbuduj();
     this.gotowy = true;
     return this.ctx.state === 'running';
