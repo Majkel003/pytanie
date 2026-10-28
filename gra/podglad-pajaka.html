@@ -1,0 +1,77 @@
+<!doctype html>
+<!-- Narzędzie robocze: sam model pająka na obrotnicy. Nie jest wgrywane na serwer. -->
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<title>Podgląd pająka</title>
+<style>
+  html,body{margin:0;height:100%;background:#15141a;overflow:hidden}
+  canvas{display:block;width:100%;height:100%}
+  #info{position:fixed;left:10px;top:10px;color:#c9a24a;font:12px/1.6 monospace;white-space:pre}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="info"></div>
+<script type="module">
+import * as THREE from './lib/three.module.js';
+import { Pajak } from './pajak.js';
+
+const r = new THREE.WebGLRenderer({ canvas: document.getElementById('c'), antialias: true });
+r.setPixelRatio(Math.min(devicePixelRatio, 2));
+const scena = new THREE.Scene();
+scena.background = new THREE.Color(0x15141a);
+
+const kam = new THREE.PerspectiveCamera(42, 1, 0.1, 100);
+scena.add(new THREE.AmbientLight(0x8899bb, 1.6));
+const kluczowe = new THREE.DirectionalLight(0xfff0dd, 2.6);
+kluczowe.position.set(3, 6, 4); scena.add(kluczowe);
+const konturowe = new THREE.PointLight(0xff6a5a, 18, 20, 1.4);
+konturowe.position.set(-3, 2, -3); scena.add(konturowe);
+
+const podloga = new THREE.Mesh(new THREE.PlaneGeometry(40, 40),
+  new THREE.MeshPhongMaterial({ color: 0x3a3a42, shininess: 8 }));
+podloga.rotation.x = -Math.PI / 2;
+scena.add(podloga);
+scena.add(new THREE.GridHelper(40, 40, 0x555566, 0x2c2c34));
+
+const pk = new Pajak(scena, { skala: 1 });
+pk.ustaw(0, 0);
+window.pk = pk;
+
+let t = 0, tempo = 2.4;
+addEventListener('keydown', e => {
+  if (e.code === 'Space') tempo = tempo > 0 ? 0 : 2.4;
+  if (e.code === 'ArrowUp') tempo = Math.min(tempo + 0.6, 6);
+  if (e.code === 'ArrowDown') tempo = Math.max(tempo - 0.6, 0);
+});
+
+function rozmiar() {
+  r.setSize(innerWidth, innerHeight, false);
+  kam.aspect = innerWidth / innerHeight;
+  kam.updateProjectionMatrix();
+}
+addEventListener('resize', rozmiar); rozmiar();
+
+let ost = performance.now();
+function klatka() {
+  requestAnimationFrame(klatka);
+  const teraz = performance.now(), dt = Math.min((teraz - ost) / 1000, 0.05);
+  ost = teraz; t += dt;
+
+  pk.animuj(dt, tempo);
+  const kat = window.kat !== undefined ? window.kat : t * 0.45;
+  const prom = window.prom !== undefined ? window.prom : 3.4;
+  const wys = window.wys !== undefined ? window.wys : 1.5;
+  kam.position.set(Math.cos(kat) * prom, wys, Math.sin(kat) * prom);
+  kam.lookAt(0, 0.45, 0);
+
+  document.getElementById('info').textContent =
+    `tempo ${tempo.toFixed(1)}  (spacja stop, strzałki szybciej/wolniej)\n` +
+    `nóg ${pk.nogi.length}  siatek ${r.info.render.calls}  trójkątów ${r.info.render.triangles}`;
+  r.render(scena, kam);
+}
+klatka();
+</script>
+</body>
+</html>

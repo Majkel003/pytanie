@@ -177,10 +177,12 @@ export class Dzwiek {
     this.tlo.gain.cancelScheduledValues(t);
     this.tlo.gain.setValueAtTime(this.tlo.gain.value, t);
     this.tlo.gain.linearRampToValueAtTime(0.5, t + 3.5);
+    this.tloPoziom = 0.5;              // poziom odniesienia dla przyciszania
   }
 
   cisza(ms = 1200) {
     if (!this.gotowy) return;
+    this.tloPoziom = undefined;
     const t = this.ctx.currentTime;
     this.tlo.gain.linearRampToValueAtTime(0, t + ms / 1000);
   }
@@ -199,14 +201,19 @@ export class Dzwiek {
   /* 0 = spokój, 1 = ktoś tuż za plecami */
   napiecie(v) { this.napiecieCel = Math.max(0, Math.min(1, v)); }
 
-  /* wołane co klatkę: płynne dojście do zadanego napięcia */
+  /* wołane co klatkę: płynne dojście do zadanego napięcia.
+     Spokojne tło jest przy tym przyciszane, bo sama zmiana głośności
+     jest słabo słyszalna, a podmiana warstwy natychmiast zwraca uwagę. */
   tik(dt) {
     if (!this.gotowy) return;
     const k = 1 - Math.exp(-2.4 * dt);
     this.napiecieTeraz += (this.napiecieCel - this.napiecieTeraz) * k;
-    const t = this.ctx.currentTime;
-    this.napG.gain.setTargetAtTime(this.napiecieTeraz * 0.5, t, 0.12);
-    this.puls.gain.setTargetAtTime(this.napiecieTeraz * 0.08, t, 0.12);
+    const n = this.napiecieTeraz, t = this.ctx.currentTime;
+    this.napG.gain.setTargetAtTime(n * 0.85, t, 0.12);
+    this.puls.gain.setTargetAtTime(n * 0.14, t, 0.12);
+    if (this.tloPoziom !== undefined) {
+      this.tlo.gain.setTargetAtTime(this.tloPoziom * (1 - 0.5 * n), t, 0.2);
+    }
   }
 
   /* ─────────── efekty ─────────── */
