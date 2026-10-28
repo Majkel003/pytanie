@@ -1,0 +1,177 @@
+:root {
+  --appH: 100vh;
+  --zloto: #c9a24a;
+  --zloto-jasne: #e4c47a;
+  --kremowy: #f2ead8;
+  --mgla: #0b0a10;
+  --czerwien: #a8402f;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body {
+  height: 100%;
+  background: var(--mgla);
+  overflow: hidden;
+  -webkit-user-select: none; user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior: none;
+  font-family: 'Oswald', system-ui, sans-serif;
+  color: var(--kremowy);
+}
+
+#plotno {
+  display: block;
+  width: 100%;
+  height: var(--appH);
+  touch-action: none;
+}
+
+/* ─────────────────── animacje ─────────────────── */
+@keyframes wejscie      { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+@keyframes rozjasnienie { from { opacity: 0; } to { opacity: 1; } }
+@keyframes tetno        { 0%,100% { transform: scale(1); } 50% { transform: scale(1.045); } }
+@keyframes tetnoSrodek  { 0%,100% { transform: translateX(-50%) scale(1); }
+                          50%      { transform: translateX(-50%) scale(1.04); } }
+@keyframes drzenie      { 0%,100% { transform: translate(0,0); } 20% { transform: translate(-5px,3px); }
+                          40% { transform: translate(4px,-3px); } 60% { transform: translate(-3px,-2px); }
+                          80% { transform: translate(3px,2px); } }
+@keyframes blyskCzerwony{ from { opacity: .62; } to { opacity: 0; } }
+@keyframes oddech       { 0%,100% { opacity: .45; } 50% { opacity: .9; } }
+@keyframes wjazdZGory   { from { opacity: 0; transform: translateY(-16px); } to { opacity: 1; transform: none; } }
+
+/* ─────────────────── winieta i przebłyski ─────────────────── */
+#winieta {
+  position: fixed; inset: 0; pointer-events: none; z-index: 10;
+  background: radial-gradient(ellipse 72% 62% at 50% 50%,
+              rgba(0,0,0,0) 38%, rgba(0,0,0,.42) 74%, rgba(0,0,0,.78) 100%);
+}
+
+#blysk {
+  position: fixed; inset: 0; pointer-events: none; z-index: 30;
+  background: radial-gradient(ellipse at center, rgba(168,64,47,.25) 0%, rgba(168,64,47,.72) 100%);
+  opacity: 0;
+}
+#blysk.gra { animation: blyskCzerwony .62s ease-out forwards; }
+
+#kurtyna {
+  position: fixed; inset: 0; pointer-events: none; z-index: 35;
+  background: var(--mgla);
+  opacity: 0; transition: opacity .55s ease;
+}
+#kurtyna.zaslona { opacity: 1; }
+
+/* ─────────────────── nakładki pełnoekranowe ─────────────────── */
+.nakladka {
+  position: fixed; inset: 0; z-index: 40;
+  display: none; flex-direction: column;
+  align-items: center; justify-content: center;
+  text-align: center; padding: 30px 26px;
+  background: radial-gradient(ellipse at center, #16141d 0%, #07070a 72%);
+}
+.nakladka.wlaczona { display: flex; animation: rozjasnienie .5s ease both; }
+
+.nakladka .znacznik {
+  font-size: 10px; letter-spacing: .34em; text-transform: uppercase;
+  color: var(--zloto); opacity: .8; margin-bottom: 16px;
+  animation: wejscie .6s .05s ease both;
+}
+.nakladka h1 {
+  font-family: 'EB Garamond', Garamond, serif;
+  font-weight: 600; font-size: clamp(30px, 8.5vw, 46px);
+  line-height: 1.12; margin-bottom: 16px; color: #f6efdf;
+  animation: wejscie .7s .14s ease both;
+}
+.nakladka p {
+  font-family: 'EB Garamond', Garamond, serif;
+  font-size: clamp(15px, 4.3vw, 18px); line-height: 1.62;
+  max-width: 31ch; color: #b4ac9c;
+  animation: wejscie .7s .26s ease both;
+}
+.nakladka p + p { margin-top: 10px; }
+
+.przycisk {
+  margin-top: 26px; padding: 15px 38px;
+  font-family: 'Oswald', sans-serif; font-weight: 400;
+  font-size: 13px; letter-spacing: .26em; text-transform: uppercase;
+  color: #0d0c10; background: var(--zloto); border: 0; border-radius: 2px;
+  cursor: pointer; touch-action: manipulation;
+  animation: wejscie .7s .4s ease both, tetno 2.8s 1.3s ease-in-out infinite;
+}
+.przycisk:active { background: #a8842f; animation: none; transform: scale(.97); }
+
+.wskazowka {
+  margin-top: 30px; font-size: 10.5px; letter-spacing: .18em;
+  text-transform: uppercase; color: #6a6356; line-height: 2.1;
+  animation: wejscie .7s .55s ease both;
+}
+.wskazowka b { color: var(--zloto); font-weight: 400; }
+
+/* ─────────────────── drążek ─────────────────── */
+#drazek {
+  position: fixed; z-index: 20; pointer-events: none;
+  width: 122px; height: 122px; margin: -61px 0 0 -61px;
+  border: 1.5px solid rgba(201,162,74,.26);
+  border-radius: 50%;
+  opacity: 0; transform: scale(.82);
+  transition: opacity .18s ease, transform .18s ease;
+}
+#drazek.widoczny { opacity: 1; transform: scale(1); }
+#galka {
+  position: absolute; left: 50%; top: 50%;
+  width: 52px; height: 52px; margin: -26px 0 0 -26px;
+  background: rgba(201,162,74,.2);
+  border: 1.5px solid rgba(201,162,74,.52);
+  border-radius: 50%;
+}
+
+/* ─────────────────── mapka ─────────────────── */
+#mapkaRamka {
+  position: fixed; right: 12px; top: 12px; z-index: 20;
+  padding: 6px; pointer-events: none;
+  background: rgba(8,8,12,.66);
+  border: 1px solid rgba(201,162,74,.28);
+  border-radius: 3px;
+  animation: wjazdZGory .6s .3s ease both;
+}
+#mapka { display: block; width: 96px; height: 96px; }
+
+/* ─────────────────── cel i komunikaty ─────────────────── */
+#cel {
+  position: fixed; left: 14px; top: 16px; z-index: 20; pointer-events: none;
+  max-width: 54vw;
+  animation: wjazdZGory .6s .3s ease both;
+}
+#cel .etykieta {
+  font-size: 9px; letter-spacing: .28em; text-transform: uppercase;
+  color: rgba(201,162,74,.72); margin-bottom: 4px;
+}
+#cel .tresc {
+  font-family: 'EB Garamond', serif; font-size: 15px; line-height: 1.35;
+  color: #ddd5c4;
+}
+
+#podpowiedz {
+  position: fixed; left: 50%; bottom: 17%; z-index: 22;
+  transform: translateX(-50%);
+  padding: 9px 20px; max-width: 86vw; text-align: center;
+  font-size: 11px; letter-spacing: .2em; text-transform: uppercase;
+  color: #0d0c10; background: rgba(201,162,74,.92); border-radius: 2px;
+  opacity: 0; transition: opacity .22s ease;
+  pointer-events: none;
+}
+#podpowiedz.widoczna { opacity: 1; animation: tetnoSrodek 1.9s ease-in-out infinite; }
+
+#szept {
+  position: fixed; left: 50%; top: 50%; z-index: 22;
+  transform: translate(-50%,-50%);
+  font-family: 'EB Garamond', serif; font-style: italic;
+  font-size: clamp(17px, 5vw, 21px); color: #e7dfcd;
+  text-align: center; max-width: 76vw; line-height: 1.45;
+  opacity: 0; transition: opacity .5s ease;
+  pointer-events: none;
+}
+#szept.widoczny { opacity: 1; }
+
+/* trzęsienie ekranu przy złapaniu */
+body.potrzasniety #plotno { animation: drzenie .42s ease; }

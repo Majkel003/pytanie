@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b0a10">
+<title>Labirynt</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,600;1,400&family=Oswald:wght@300;400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styl.css">
+</head>
+<body>
+
+<canvas id="plotno"></canvas>
+
+<div id="winieta"></div>
+<div id="blysk"></div>
+
+<div id="cel"><div class="etykieta">Zadanie</div><div class="tresc"></div></div>
+<div id="mapkaRamka"><canvas id="mapka" width="192" height="192"></canvas></div>
+<div id="podpowiedz"></div>
+<div id="szept"></div>
+<div id="drazek"><div id="galka"></div></div>
+
+<div id="kurtyna"></div>
+<div class="nakladka" id="ekran"></div>
+
+<script type="module">
+import { Gra, CELL } from './gra.js';
+import { UI } from './ui.js';
+
+const gra = new Gra(document.getElementById('plotno'));
+gra.zbuduj(16, 16, 20261028);
+gra.rozmiar();
+
+/* ─────────────── mapka odkrywana w trakcie ─────────────── */
+const mapa = document.getElementById('mapka');
+const mg = mapa.getContext('2d');
+let ostatniRysunek = 0;
+gra.mapka = () => {
+  // mapka nie musi się odświeżać co klatkę
+  const teraz = performance.now();
+  if (teraz - ostatniRysunek < 90) return;
+  ostatniRysunek = teraz;
+
+  const lab = gra.lab, n = Math.max(lab.w, lab.h);
+  const k = mapa.width / n;
+  mg.clearRect(0, 0, mapa.width, mapa.height);
+
+  for (let y = 0; y < lab.h; y++) for (let x = 0; x < lab.w; x++) {
+    if (!gra.odwiedzone[y * lab.w + x]) continue;
+    mg.fillStyle = 'rgba(201,162,74,.14)';
+    mg.fillRect(x * k, y * k, k, k);
+    mg.strokeStyle = 'rgba(201,162,74,.6)';
+    mg.lineWidth = 1.3;
+    mg.beginPath();
+    if (lab.ma(x, y, 1)) { mg.moveTo(x * k,     y * k);     mg.lineTo(x * k + k, y * k); }
+    if (lab.ma(x, y, 4)) { mg.moveTo(x * k,     y * k + k); mg.lineTo(x * k + k, y * k + k); }
+    if (lab.ma(x, y, 8)) { mg.moveTo(x * k,     y * k);     mg.lineTo(x * k,     y * k + k); }
+    if (lab.ma(x, y, 2)) { mg.moveTo(x * k + k, y * k);     mg.lineTo(x * k + k, y * k + k); }
+    mg.stroke();
+  }
+
+  const px = gra.pozycja.x / CELL * k, py = gra.pozycja.z / CELL * k;
+  mg.save();
+  mg.translate(px, py);
+  mg.rotate(-gra.obrot.y);
+  mg.fillStyle = '#f2ead8';
+  mg.beginPath();
+  mg.moveTo(0, -5.5); mg.lineTo(4.2, 4.8); mg.lineTo(0, 2.2); mg.lineTo(-4.2, 4.8);
+  mg.closePath(); mg.fill();
+  mg.restore();
+};
+
+/* ─────────────── wejście do gry ─────────────── */
+UI.hud(false);
+const start = UI.pokazNakladke('ekran', {
+  znacznik: 'Dwudziesty ósmy października',
+  tytul: 'Labirynt',
+  akapity: [
+    'Michał gdzieś tu jest. Nie wiem, jak daleko.',
+    'Znajdź go i wyprowadź oboje na zewnątrz.'
+  ],
+  przycisk: 'Wchodzę',
+  wskazowka: '<b>Lewy kciuk</b> chodzi<br><b>Prawa strona</b> rozgląda'
+});
+
+start.addEventListener('click', async () => {
+  await UI.zaslon(420);
+  UI.ukryjNakladke('ekran');
+  UI.hud(true);
+  UI.cel('Znajdź drogę w głąb');
+  gra.start();
+  await UI.odsloń(700);
+  await UI.szept('Za tobą zamknęły się drzwi.');
+}, { once: true });
+
+window.gra = gra;
+window.UI = UI;
+</script>
+</body>
+</html>
