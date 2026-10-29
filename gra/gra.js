@@ -1,5 +1,5 @@
-import * as THREE from './lib/three.module.js?v=1793274437';
-import { Labirynt, N, E, S, W } from './labirynt.js?v=1793274437';
+import * as THREE from './lib/three.module.js?v=1793278806';
+import { Labirynt, N, E, S, W } from './labirynt.js?v=1793278806';
 
 /* ───────────────── wymiary świata ───────────────── */
 export const CELL = 4;        // bok komórki labiryntu
@@ -460,6 +460,7 @@ export class Gra {
   /* Przeszkoda dostawiana do kolizji poza murami labiryntu: stoisko,
      które blokuje korytarz do czasu rozwiązania zagadki. */
   dodajPrzeszkode(a) {
+    a.przeszkoda = true;          // odróżnia przedmiot od muru labiryntu
     const cx0 = Math.floor(a.x0 / CELL), cx1 = Math.floor(a.x1 / CELL);
     const cz0 = Math.floor(a.z0 / CELL), cz1 = Math.floor(a.z1 / CELL);
     for (let cz = cz0; cz <= cz1; cz++) for (let cx = cx0; cx <= cx1; cx++) {

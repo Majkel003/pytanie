@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,600;1,400&family=Oswald:wght@300;400&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styl.css?v=1793274437">
+<link rel="stylesheet" href="styl.css?v=1793278806">
 <script>
 /* Łapacz awarii: bez tego błąd w module daje tylko czarny ekran
    i nie wiadomo, czy gra się zawiesiła, czy jeszcze wczytuje. */
@@ -73,12 +73,12 @@
 <div class="nakladka" id="ekran"></div>
 
 <script type="module">
-import { Gra, CELL } from './gra.js?v=1793274437';
-import { UI } from './ui.js?v=1793274437';
-import { Dzwiek } from './dzwiek.js?v=1793274437';
-import { Swiat } from './swiat.js?v=1793274437';
-import { Rekwizyty } from './rekwizyty.js?v=1793274437';
-import { ratujFenka, jumpscare, kielbasa } from './minigry.js?v=1793274437';
+import { Gra, CELL } from './gra.js?v=1793278806';
+import { UI } from './ui.js?v=1793278806';
+import { Dzwiek } from './dzwiek.js?v=1793278806';
+import { Swiat } from './swiat.js?v=1793278806';
+import { Rekwizyty } from './rekwizyty.js?v=1793278806';
+import { ratujFenka, jumpscare, kielbasa } from './minigry.js?v=1793278806';
 
 const gra = new Gra(document.getElementById('plotno'));
 const dzwiek = new Dzwiek();
@@ -387,7 +387,7 @@ async function celaStartowa() {
   const pokoj = gra.zbudujPokoj(2, 'loch', 3);
   const wnetrzeSali = await rekwizyty.wnetrze('modele/sala.glb', {
     srodek: { x: pokoj.srodek.x, z: 2.6 },
-    szerokosc: pokoj.bok - 0.3
+    szerokosc: pokoj.bok - 0.3, blokuj: true
   }).catch(e => { console.warn('sala:', e.message); return null; });
 
   // drzwi na tylnej ścianie: wyjście ma być widoczne, a nie domyślne
@@ -525,11 +525,18 @@ async function bialyPokoj() {
   swiat.usunPostacie();
   rekwizyty.usun();
   const pokoj = gra.zbudujBialyPokoj(5);
+
+  // Gracz zostawał tam, gdzie wyszedł z labiryntu, a to bywa daleko poza
+  // tym pokojem. Stawiamy go w środku, krok za parą, zwróconego do nich.
+  gra.pozycja.set(pokoj.srodek.x, 1.62, pokoj.srodek.z + 3.4);
+  gra.obrot.y = 0; gra.obrot.x = -0.04;
   gra.zamrozony = false;
 
-  // mieszkanie jako sceneria końcowa, a w nim oboje
-  await rekwizyty.wnetrze('modele/mieszkanie.glb',
-    { x: 0, y: 0, bok: 5, wysokosc: 4.4 }).catch(e => console.warn('mieszkanie:', e.message));
+  // Mieszkanie jako sceneria końcowa, a w nim oboje. Bez bariery: tutaj
+  // gracz stoi w środku modelu, a nie oglada go z zewnątrz jak dioramę celi.
+  await rekwizyty.wnetrze('modele/mieszkanie.glb', {
+    srodek: pokoj.srodek, szerokosc: pokoj.bok - 0.4
+  }).catch(e => console.warn('mieszkanie:', e.message));
   await swiat.scenaKoncowa(pokoj.bok);
 
   await UI.odsloń(1400);
@@ -547,6 +554,7 @@ window.swiat = swiat;
 window.rekwizyty = rekwizyty;
 window.UI = UI;
 window.dzwiek = dzwiek;
+window.bialyPokoj = bialyPokoj;   // zaczep dla testów finału
 </script>
 </body>
 </html>

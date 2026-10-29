@@ -1,8 +1,8 @@
-import * as THREE from './lib/three.module.js?v=1793274437';
-import { Postac, wczytajSprite } from './postacie.js?v=1793274437';
-import { Pajak } from './pajak.js?v=1793274437';
-import { CELL } from './gra.js?v=1793274437';
-import { N, E, S, W } from './labirynt.js?v=1793274437';
+import * as THREE from './lib/three.module.js?v=1793278806';
+import { Postac, wczytajSprite } from './postacie.js?v=1793278806';
+import { Pajak } from './pajak.js?v=1793278806';
+import { CELL } from './gra.js?v=1793278806';
+import { N, E, S, W } from './labirynt.js?v=1793278806';
 
 /* Logika świata: kto gdzie stoi, kto za kim chodzi, kiedy otwiera się wyjście.
    Silnik (gra.js) nie wie nic o fabule, a to tutaj nie dotyka renderowania. */
@@ -91,6 +91,11 @@ export class Swiat {
     const lab = gra.lab;
     this.usunPostacie();
 
+    // Bryły kolizji z poprzedniego rozstawienia muszą zejść z planszy,
+    // inaczej po każdej śmierci zostają w labiryncie niewidzialne klocki.
+    for (const b of this.bryly || []) gra.usunPrzeszkode(b);
+    this.bryly = [];
+
     // Rozstawienie ma sens tylko w labiryncie. W małym pomieszczeniu
     // nie ma dokąd nikogo postawić i bez tej blokady całość się wysypywała.
     if (!gra.wyjscie || lab.w < 6 || lab.h < 6) {
@@ -132,6 +137,11 @@ export class Swiat {
     this.fenekRuch = new Ruch(lab, fx * CELL + CELL / 2, fy * CELL + CELL / 2);
     this.postacie.push(this.fenek);
     this.fenekZabrany = false;
+    this.bryłaFenka = gra.dodajPrzeszkode({
+      x0: fx * CELL + CELL / 2 - 0.42, z0: fy * CELL + CELL / 2 - 0.42,
+      x1: fx * CELL + CELL / 2 + 0.42, z1: fy * CELL + CELL / 2 + 0.42
+    });
+    this.bryly.push(this.bryłaFenka);
 
     // Stoisko wyznaczamy przed resztą, bo jego bryła blokuje całą komórkę
     // i każdy, kto by w niej stanął, utknąłby w środku.
@@ -154,6 +164,13 @@ export class Swiat {
       { wysokosc: 1.74, nazwa: 'Programista' });
     this.programista.ustaw(pr.x * CELL + CELL / 2, pr.y * CELL + CELL / 2);
     this.postacie.push(this.programista);
+    // Programista stoi w miejscu, więc wypada, żeby był z czegoś zrobiony.
+    // Remcioszek, pająki i towarzysze zostają przenikalni: gdyby blokowali
+    // korytarz, potrafiliby zamknąć jedyne przejście.
+    this.bryly.push(gra.dodajPrzeszkode({
+      x0: this.programista.pozycja.x - 0.42, z0: this.programista.pozycja.z - 0.42,
+      x1: this.programista.pozycja.x + 0.42, z1: this.programista.pozycja.z + 0.42
+    }));
 
     // Remcioszek: start daleko od gracza, trasa losowana za każdym razem
     const rm = losujWolne(14);
@@ -162,6 +179,7 @@ export class Swiat {
     this.remcioszek.ustaw(rm.x * CELL + CELL / 2, rm.y * CELL + CELL / 2);
     this.remRuch = new Ruch(lab, rm.x * CELL + CELL / 2, rm.y * CELL + CELL / 2);
     this.remStan = 'blada';
+    this.remZwloka = 0;
     this.remBezTropu = 0;
     this.dotyk = 0;
     this.postacie.push(this.remcioszek);
@@ -316,14 +334,16 @@ export class Swiat {
 
     this.stoisko = {
       komorka: wybor, srodek, rozwiazane: false, obrot,
-      przeszkoda: this.gra.dodajPrzeszkode({
+      przeszkoda: this.#zapamietajBryle(this.gra.dodajPrzeszkode({
         x0: srodek.x - 1.5, z0: srodek.z - 1.5,
         x1: srodek.x + 1.5, z1: srodek.z + 1.5
-      }),
+      })),
       model: null
     };
     this.naZdarzenie?.('stoisko-postawione', this.stoisko);
   }
+
+  #zapamietajBryle(b) { (this.bryly = this.bryly || []).push(b); return b; }
 
   rozwiazStoisko() {
     if (!this.stoisko || this.stoisko.rozwiazane) return;
@@ -440,6 +460,10 @@ export class Swiat {
       if (widzi || slyszy) {
         this.remStan = 'goni';
         this.remBezTropu = 0;
+        // Chwila rozpoznania: zanim ruszy w pogoń, staje. Bez tego
+        // dostrzeżenie jej z trzech jednostek kończyło się złapaniem po
+        // pół sekundy, bo ona rozbiega się z miejsca, a on już pędzi.
+        this.remZwloka = 0.7;
         this.dzwiek?.zamek();
         this.naZdarzenie?.('zauwazyl');
       } else if (this.remRuch.krok(dt, 2.2)) {
@@ -449,8 +473,13 @@ export class Swiat {
     }
 
     if (this.remStan === 'goni') {
-      this.remRuch.ustawCel(gx, gy);
-      this.remRuch.krok(dt, 2.95);
+      if (this.remZwloka > 0) {
+        this.remZwloka -= dt;
+        this.dotyk = 0;
+      } else {
+        this.remRuch.ustawCel(gx, gy);
+        this.remRuch.krok(dt, 2.95);
+      }
       if (!widzi && odl > CELL * 3) {
         this.remBezTropu += dt;
         if (this.remBezTropu > 6) {
@@ -462,7 +491,7 @@ export class Swiat {
 
       // Otarcie się nie liczy: musi utrzymać kontakt przez chwilę.
       // Bez tego minięcie go w korytarzu kończyło grę bez szansy reakcji.
-      if (odl < 1.9) {
+      if (odl < 1.9 && this.remZwloka <= 0) {
         this.dotyk = (this.dotyk || 0) + dt;
         if (this.dotyk > 0.35) { this.dotyk = 0; this.naZdarzenie?.('zlapana'); return; }
       } else this.dotyk = 0;
@@ -589,6 +618,8 @@ export class Swiat {
     if (this.przyStoisku) { this.naZdarzenie?.('stoisko'); return true; }
     if (this.przyFenku) {
       this.fenekZabrany = true;
+      // idący za graczem towarzysz nie może być przeszkodą
+      if (this.bryłaFenka) { this.gra.usunPrzeszkode(this.bryłaFenka); this.bryłaFenka = null; }
       this.dzwiek?.zdobycz();
       this.ui.cel('Wyprowadźcie się na zewnątrz');
       this.gra.znaczniki = [{ x: this.gra.wyjscie.x, y: this.gra.wyjscie.y, kolor: '#e4c47a' }];

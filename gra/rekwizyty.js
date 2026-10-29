@@ -1,7 +1,7 @@
-import * as THREE from './lib/three.module.js?v=1793274437';
-import { GLTFLoader } from './lib/GLTFLoader.js?v=1793274437';
-import { mergeGeometries } from './lib/BufferGeometryUtils.js?v=1793274437';
-import { CELL } from './gra.js?v=1793274437';
+import * as THREE from './lib/three.module.js?v=1793278806';
+import { GLTFLoader } from './lib/GLTFLoader.js?v=1793278806';
+import { mergeGeometries } from './lib/BufferGeometryUtils.js?v=1793278806';
+import { CELL } from './gra.js?v=1793278806';
 
 /* Modele wstawiane do labiryntu. Każdy wczytywany raz i powielany przez
    klonowanie, bo kopia dzieli geometrię i teksturę z oryginałem i nie
@@ -144,7 +144,7 @@ export class Rekwizyty {
      utknąć w meblach.                                                   */
   /* Model wnętrza skalowany tak, by jego ściany objęły pomieszczenie,
      a gracz stał w środku, a nie oglądał makietę z zewnątrz. */
-  async wnetrze(sciezka, { srodek, szerokosc, obrot = 0, podniesienie = 0 } = {}) {
+  async wnetrze(sciezka, { srodek, szerokosc, obrot = 0, podniesienie = 0, blokuj = false } = {}) {
     const wzor = await model(sciezka);
     const egz = wzor.clone(true);
 
@@ -162,6 +162,17 @@ export class Rekwizyty {
 
     this.grupa.add(egz);
     const koncowa = new THREE.Box3().setFromObject(egz);
+
+    // Model wnętrza to dekoracja, nie podłoga do chodzenia. Bez bariery
+    // gracz wchodzi w jego ściany i gruz jak w mgłę.
+    if (blokuj) {
+      const luz = 0.25;
+      this.gra.dodajPrzeszkode({
+        x0: koncowa.min.x + luz, z0: koncowa.min.z + luz,
+        x1: koncowa.max.x - luz, z1: koncowa.max.z - luz
+      });
+    }
+
     return { obiekt: egz,
              rozmiar: koncowa.getSize(new THREE.Vector3()),
              srodek: koncowa.getCenter(new THREE.Vector3()) };
@@ -206,13 +217,23 @@ export class Rekwizyty {
       // tylko tam, gdzie są przynajmniej dwie ściany: róg albo zaułek
       const scian = [1, 2, 4, 8].filter(k => lab.ma(x, y, k)).length;
       if (scian < 2) continue;
-      const egz = this.#beczka();
+      // beczka przysunięta do istniejącej ściany, a nie na środku korytarza:
+      // inaczej jej kolizja potrafiłaby zatkać przejście
+      const przy = [[1, 0, -1], [2, 1, 0], [4, 0, 1], [8, -1, 0]]
+        .filter(([k]) => lab.ma(x, y, k));
+      const [, dx, dz] = przy[Math.floor(lab.rnd() * przy.length)];
       const s = 0.9 + lab.rnd() * 0.3;
+      const px = x * CELL + CELL / 2 + dx * (CELL / 2 - 0.85) + (dx ? 0 : (lab.rnd() - 0.5) * 1.2);
+      const pz = y * CELL + CELL / 2 + dz * (CELL / 2 - 0.85) + (dz ? 0 : (lab.rnd() - 0.5) * 1.2);
+
+      const egz = this.#beczka();
       egz.scale.setScalar(s);
-      egz.position.set(x * CELL + CELL / 2 + (lab.rnd() - 0.5) * 1.6,
-                       0, y * CELL + CELL / 2 + (lab.rnd() - 0.5) * 1.6);
+      egz.position.set(px, 0, pz);
       egz.rotation.y = lab.rnd() * Math.PI * 2;
       this.grupa.add(egz);
+
+      const r = 0.36 * s;
+      this.gra.dodajPrzeszkode({ x0: px - r, z0: pz - r, x1: px + r, z1: pz + r });
       postawione++;
     }
     return postawione;
