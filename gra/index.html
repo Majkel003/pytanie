@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,600;1,400&family=Oswald:wght@300;400&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styl.css?v=1793201931">
+<link rel="stylesheet" href="styl.css?v=1793274437">
 <script>
 /* Łapacz awarii: bez tego błąd w module daje tylko czarny ekran
    i nie wiadomo, czy gra się zawiesiła, czy jeszcze wczytuje. */
@@ -73,12 +73,12 @@
 <div class="nakladka" id="ekran"></div>
 
 <script type="module">
-import { Gra, CELL } from './gra.js?v=1793201931';
-import { UI } from './ui.js?v=1793201931';
-import { Dzwiek } from './dzwiek.js?v=1793201931';
-import { Swiat } from './swiat.js?v=1793201931';
-import { Rekwizyty } from './rekwizyty.js?v=1793201931';
-import { ratujFenka, jumpscare, kielbasa } from './minigry.js?v=1793201931';
+import { Gra, CELL } from './gra.js?v=1793274437';
+import { UI } from './ui.js?v=1793274437';
+import { Dzwiek } from './dzwiek.js?v=1793274437';
+import { Swiat } from './swiat.js?v=1793274437';
+import { Rekwizyty } from './rekwizyty.js?v=1793274437';
+import { ratujFenka, jumpscare, kielbasa } from './minigry.js?v=1793274437';
 
 const gra = new Gra(document.getElementById('plotno'));
 const dzwiek = new Dzwiek();
@@ -210,7 +210,7 @@ const start = UI.pokazNakladke('ekran', {
     'Znajdź go i wyprowadź oboje na zewnątrz.'
   ],
   przycisk: 'Wchodzę',
-  wskazowka: '<b>Lewy kciuk</b> chodzi<br><b>Prawa strona</b> rozgląda<br>Najlepiej w słuchawkach'
+  wskazowka: '<b>Drążek w lewym dolnym rogu</b> chodzi<br><b>Reszta ekranu</b> rozgląda<br>Najlepiej w słuchawkach'
 });
 
 /* Gdyby dźwięk nie ruszył (zdarza się w webview i przy włączonej ciszy),

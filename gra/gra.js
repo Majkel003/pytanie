@@ -1,5 +1,5 @@
-import * as THREE from './lib/three.module.js?v=1793201931';
-import { Labirynt, N, E, S, W } from './labirynt.js?v=1793201931';
+import * as THREE from './lib/three.module.js?v=1793274437';
+import { Labirynt, N, E, S, W } from './labirynt.js?v=1793274437';
 
 /* ───────────────── wymiary świata ───────────────── */
 export const CELL = 4;        // bok komórki labiryntu
@@ -490,19 +490,30 @@ export class Gra {
   #wejscie() {
     const role = new Map();
     let drazek = null, patrzenie = null;
-    const polowa = () => innerWidth * 0.46;
+
+    /* Środek drążka bierzemy z jego położenia na ekranie, więc o miejscu
+       decyduje arkusz stylów, a nie liczba wpisana tutaj. Pole trafienia
+       jest wyraźnie większe od pierścienia, żeby kciuk nie musiał celować. */
+    const srodekDrazka = () => {
+      const r = $('drazek').getBoundingClientRect();
+      return { x: r.left + r.width / 2, y: r.top + r.height / 2, r: r.width / 2 };
+    };
+    const naDrazku = (x, y) => {
+      const s = srodekDrazka();
+      return Math.hypot(x - s.x, y - s.y) < s.r * 1.45;
+    };
 
     this.plotno.addEventListener('pointerdown', e => {
       if (this.zablokowaneWejscie) return;
-      this.plotno.setPointerCapture(e.pointerId);
-      if (e.clientX < polowa() && !drazek) {
-        drazek = { id: e.pointerId, ox: e.clientX, oy: e.clientY };
+      // przechwycenie wskaźnika bywa odrzucane; nie może to ubić sterowania
+      try { this.plotno.setPointerCapture(e.pointerId); } catch (err) { /* trudno */ }
+      if (!drazek && naDrazku(e.clientX, e.clientY)) {
+        const s = srodekDrazka();
+        drazek = { id: e.pointerId, ox: s.x, oy: s.y };
         role.set(e.pointerId, 'drazek');
-        const d = $('drazek');
-        d.style.left = e.clientX + 'px';
-        d.style.top  = e.clientY + 'px';
-        d.classList.add('widoczny');
-        $('galka').style.transform = 'translate(-50%,-50%)';
+        $('drazek').classList.add('widoczny');
+        // gałka od razu skacze pod palec, zamiast czekać na ruch
+        this.#przesunGalke(e.clientX - s.x, e.clientY - s.y);
       } else if (!patrzenie) {
         patrzenie = { id: e.pointerId, px: e.clientX, py: e.clientY,
                       startX: e.clientX, startY: e.clientY, kiedy: performance.now(),
@@ -515,12 +526,7 @@ export class Gra {
     this.plotno.addEventListener('pointermove', e => {
       const rola = role.get(e.pointerId);
       if (rola === 'drazek' && drazek) {
-        let dx = e.clientX - drazek.ox, dy = e.clientY - drazek.oy;
-        const max = 54, d = Math.hypot(dx, dy);
-        if (d > max) { dx = dx / d * max; dy = dy / d * max; }
-        this.sterowanie.bok   = dx / max;
-        this.sterowanie.przod = -dy / max;
-        $('galka').style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+        this.#przesunGalke(e.clientX - drazek.ox, e.clientY - drazek.oy);
       } else if (rola === 'patrzenie' && patrzenie) {
         const dx = e.clientX - patrzenie.px, dy = e.clientY - patrzenie.py;
         patrzenie.px = e.clientX; patrzenie.py = e.clientY;
@@ -537,6 +543,7 @@ export class Gra {
         drazek = null;
         this.sterowanie.przod = this.sterowanie.bok = 0;
         $('drazek').classList.remove('widoczny');
+        $('galka').style.transform = 'translate(-50%,-50%)';
       } else if (rola === 'patrzenie') {
         // stuknięcie, a nie rozglądanie: krótkie i bez przesunięcia
         if (patrzenie && patrzenie.przesuniecie < 12 &&
@@ -554,6 +561,15 @@ export class Gra {
     addEventListener('keydown', e => { kl[e.code] = 1; });
     addEventListener('keyup',   e => { kl[e.code] = 0; });
     this.klawisze = kl;
+  }
+
+  /* Gałka podąża za palcem, ale nie wyjeżdża poza pierścień. */
+  #przesunGalke(dx, dy) {
+    const max = 52, d = Math.hypot(dx, dy);
+    if (d > max) { dx = dx / d * max; dy = dy / d * max; }
+    this.sterowanie.bok = dx / max;
+    this.sterowanie.przod = -dy / max;
+    $('galka').style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
   }
 
   #zKlawiatury() {

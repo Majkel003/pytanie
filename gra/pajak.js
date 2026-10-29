@@ -1,4 +1,4 @@
-import * as THREE from './lib/three.module.js?v=1793201931';
+import * as THREE from './lib/three.module.js?v=1793274437';
 
 /* Pająk budowany z brył, nie wczytywany z pliku: osiem nóg po trzy człony,
    korpus z dwóch brzuchów, czerwony znak na odwłoku.
